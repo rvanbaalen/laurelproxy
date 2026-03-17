@@ -7,6 +7,10 @@
   Captures traffic, stores it in SQLite, and makes it queryable -- by humans and LLMs alike.
 </p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@rvanbaalen/roxyproxy"><img src="https://img.shields.io/npm/v/@rvanbaalen/roxyproxy" alt="npm version" /></a>
+</p>
+
 ## Table of Contents
 
 - [Installation](#installation)
