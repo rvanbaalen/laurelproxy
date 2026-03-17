@@ -1,0 +1,15 @@
+{
+  "name": "rvanbaalen-roxyproxy",
+  "owner": {
+    "name": "Robin van Baalen",
+    "url": "https://github.com/rvanbaalen"
+  },
+  "plugins": [
+    {
+      "name": "roxyproxy",
+      "source": "./",
+      "description": "HTTP/HTTPS intercepting proxy - CLI commands, API reference, and traffic debugging workflows",
+      "version": "1.0.0"
+    }
+  ]
+}
