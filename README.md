@@ -5,6 +5,7 @@ HTTP/HTTPS intercepting proxy with a CLI and web UI. Captures traffic, stores it
 ## Table of Contents
 
 - [Installation](#installation)
+- [Claude Code Plugin](#claude-code-plugin)
 - [Quick Start](#quick-start)
 - [Interactive Mode](#interactive-mode)
 - [CLI Commands](#cli-commands)
@@ -30,18 +31,56 @@ HTTP/HTTPS intercepting proxy with a CLI and web UI. Captures traffic, stores it
 
 ## Installation
 
+Run directly without installing:
+
 ```bash
-git clone <repo-url>
+npx @rvanbaalen/roxyproxy
+```
+
+Or install globally:
+
+```bash
+npm install -g @rvanbaalen/roxyproxy
+roxyproxy
+```
+
+### From source
+
+```bash
+git clone https://github.com/rvanbaalen/roxyproxy.git
 cd roxyproxy
 npm install
 npm run build
-```
-
-To make the `roxyproxy` command available globally:
-
-```bash
 npm link
 ```
+
+## Claude Code Plugin
+
+RoxyProxy ships with a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin. Once installed, Claude knows all RoxyProxy commands, filters, API endpoints, and common debugging workflows.
+
+### Install
+
+```
+/plugin marketplace add rvanbaalen/roxyproxy
+```
+
+Then open the plugin browser and install roxyproxy:
+
+```
+/plugin
+```
+
+### What it provides
+
+After installation, Claude can help you:
+
+- Start/stop the proxy and configure HTTPS interception
+- Write `roxyproxy requests` queries with the right filter flags
+- Use the REST API to query captured traffic programmatically
+- Debug failing API calls by inspecting captured request/response pairs
+- Set up system-wide proxy routing on macOS
+
+Just ask Claude anything about intercepting or inspecting HTTP traffic and it will use its knowledge of RoxyProxy to help.
 
 ## Quick Start
 
