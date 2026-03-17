@@ -1,40 +1,32 @@
-import { useState } from 'react';
-
 interface FilterBarProps {
-  onFilter: (filters: Record<string, string>) => void;
+  host: string;
+  status: string;
+  method: string;
+  search: string;
+  onHostChange: (v: string) => void;
+  onStatusChange: (v: string) => void;
+  onMethodChange: (v: string) => void;
+  onSearchChange: (v: string) => void;
+  onClearFilters: () => void;
+  matchCount: number;
+  totalCount: number;
 }
 
-export function FilterBar({ onFilter }: FilterBarProps) {
-  const [host, setHost] = useState('');
-  const [status, setStatus] = useState('');
-  const [method, setMethod] = useState('');
-  const [search, setSearch] = useState('');
-
-  const apply = () => {
-    const filters: Record<string, string> = {};
-    if (host) filters.host = host;
-    if (status) filters.status = status;
-    if (method) filters.method = method;
-    if (search) filters.search = search;
-    onFilter(filters);
-  };
-
-  const clear = () => {
-    setHost('');
-    setStatus('');
-    setMethod('');
-    setSearch('');
-    onFilter({});
-  };
+export function FilterBar({
+  host, status, method, search,
+  onHostChange, onStatusChange, onMethodChange, onSearchChange, onClearFilters,
+  matchCount, totalCount,
+}: FilterBarProps) {
+  const hasFilters = !!(host || status || method || search);
 
   return (
     <div className="flex items-center gap-2 p-3 bg-gray-900 border-b border-gray-800">
-      <input type="text" placeholder="Host" value={host} onChange={(e) => setHost(e.target.value)}
-        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 w-40" />
-      <input type="text" placeholder="Status" value={status} onChange={(e) => setStatus(e.target.value)}
-        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 w-20" />
-      <select value={method} onChange={(e) => setMethod(e.target.value)}
-        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700">
+      <input type="text" placeholder="Host" value={host} onChange={(e) => onHostChange(e.target.value)}
+        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 w-40 focus:border-blue-500 focus:outline-none" />
+      <input type="text" placeholder="Status" value={status} onChange={(e) => onStatusChange(e.target.value)}
+        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 w-20 focus:border-blue-500 focus:outline-none" />
+      <select value={method} onChange={(e) => onMethodChange(e.target.value)}
+        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 focus:border-blue-500 focus:outline-none">
         <option value="">All Methods</option>
         <option value="GET">GET</option>
         <option value="POST">POST</option>
@@ -43,10 +35,14 @@ export function FilterBar({ onFilter }: FilterBarProps) {
         <option value="DELETE">DELETE</option>
         <option value="OPTIONS">OPTIONS</option>
       </select>
-      <input type="text" placeholder="Search URL..." value={search} onChange={(e) => setSearch(e.target.value)}
-        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 flex-1" />
-      <button onClick={apply} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">Filter</button>
-      <button onClick={clear} className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded text-sm">Clear</button>
+      <input type="text" placeholder="Search URL..." value={search} onChange={(e) => onSearchChange(e.target.value)}
+        className="bg-gray-800 text-gray-100 px-2 py-1 rounded text-sm border border-gray-700 flex-1 focus:border-blue-500 focus:outline-none" />
+      {hasFilters && (
+        <>
+          <span className="text-xs text-gray-500">{matchCount}/{totalCount}</span>
+          <button onClick={onClearFilters} className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded text-sm">Clear</button>
+        </>
+      )}
     </div>
   );
 }

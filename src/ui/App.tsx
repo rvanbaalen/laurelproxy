@@ -1,11 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Controls } from './components/Controls.tsx';
 import { FilterBar } from './components/FilterBar.tsx';
 import { TrafficList } from './components/TrafficList.tsx';
 import { RequestDetail } from './components/RequestDetail.tsx';
 import { ResizeHandle } from './components/ResizeHandle.tsx';
-import { useSSE, fetchRequests } from './api.ts';
-import type { RequestRecord } from './api.ts';
+import { useSSE } from './api.ts';
 
 const MIN_PANEL_WIDTH = 300;
 const MAX_PANEL_WIDTH = 900;
@@ -13,17 +12,32 @@ const DEFAULT_PANEL_WIDTH = 500;
 
 export function App() {
   const liveRequests = useSSE(500);
-  const [filteredRequests, setFilteredRequests] = useState<RequestRecord[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
 
-  const handleFilter = useCallback(async (filters: Record<string, string>) => {
-    if (Object.keys(filters).length === 0) { setFilteredRequests(null); return; }
-    const result = await fetchRequests(filters);
-    setFilteredRequests(result.data);
-  }, []);
+  const [filterHost, setFilterHost] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterMethod, setFilterMethod] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
 
-  const handleClear = useCallback(() => { setFilteredRequests(null); setSelectedId(null); }, []);
+  const filteredRequests = useMemo(() => {
+    const host = filterHost.toLowerCase();
+    const status = filterStatus;
+    const method = filterMethod;
+    const search = filterSearch.toLowerCase();
+
+    if (!host && !status && !method && !search) return liveRequests;
+
+    return liveRequests.filter((r) => {
+      if (host && !r.host.toLowerCase().includes(host)) return false;
+      if (status && String(r.status) !== status) return false;
+      if (method && r.method !== method) return false;
+      if (search && !r.url.toLowerCase().includes(search)) return false;
+      return true;
+    });
+  }, [liveRequests, filterHost, filterStatus, filterMethod, filterSearch]);
+
+  const handleClear = useCallback(() => { setSelectedId(null); }, []);
 
   const handleSelect = useCallback((id: string) => {
     setSelectedId(prev => prev === id ? null : id);
@@ -33,15 +47,26 @@ export function App() {
     setPanelWidth(prev => Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, prev + delta)));
   }, []);
 
-  const displayRequests = filteredRequests ?? liveRequests;
+  const clearFilters = useCallback(() => {
+    setFilterHost('');
+    setFilterStatus('');
+    setFilterMethod('');
+    setFilterSearch('');
+  }, []);
 
   return (
     <div className="flex flex-col h-screen">
       <Controls onClear={handleClear} />
-      <FilterBar onFilter={handleFilter} />
+      <FilterBar
+        host={filterHost} status={filterStatus} method={filterMethod} search={filterSearch}
+        onHostChange={setFilterHost} onStatusChange={setFilterStatus}
+        onMethodChange={setFilterMethod} onSearchChange={setFilterSearch}
+        onClearFilters={clearFilters}
+        matchCount={filteredRequests.length} totalCount={liveRequests.length}
+      />
       <div className="flex flex-1 overflow-hidden">
         <div className="flex flex-col flex-1 min-w-0">
-          <TrafficList requests={displayRequests} selectedId={selectedId} onSelect={handleSelect} />
+          <TrafficList requests={filteredRequests} selectedId={selectedId} onSelect={handleSelect} />
         </div>
         {selectedId && (
           <>
