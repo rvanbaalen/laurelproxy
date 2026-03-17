@@ -18,6 +18,7 @@ export class RoxyProxyServer {
   private events: EventManager;
   private cleanup: Cleanup;
   private apiServer: http.Server | null = null;
+  private connections: Set<net.Socket> = new Set();
   private proxyRunning = false;
   private actualProxyPort = 0;
 
@@ -69,6 +70,10 @@ export class RoxyProxyServer {
         const addr = this.apiServer!.address() as net.AddressInfo;
         resolve(addr.port);
       });
+      this.apiServer!.on('connection', (socket) => {
+        this.connections.add(socket);
+        socket.on('close', () => this.connections.delete(socket));
+      });
     });
 
     return { proxyPort: this.actualProxyPort, uiPort };
@@ -82,6 +87,11 @@ export class RoxyProxyServer {
       this.proxyRunning = false;
     }
     if (this.apiServer) {
+      // Destroy lingering connections (SSE keep-alive, etc.)
+      for (const socket of this.connections) {
+        socket.destroy();
+      }
+      this.connections.clear();
       await new Promise<void>((resolve) => this.apiServer!.close(() => resolve()));
     }
     this.db.close();
