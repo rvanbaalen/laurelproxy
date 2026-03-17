@@ -66,6 +66,21 @@ export async function disableSystemProxy(service?: string): Promise<ProxyResult>
   return { ok: false, message: 'Failed to disable system proxy.' };
 }
 
+export async function checkSystemProxyStatus(): Promise<boolean> {
+  if (os.platform() !== 'darwin') return false;
+
+  const svc = await detectService();
+  if (!svc) return false;
+
+  const result = await run('networksetup', ['-getwebproxy', svc]);
+  if (result.code !== 0) return false;
+
+  // Output contains "Enabled: Yes/No" and "Server: ..." lines
+  const enabled = /Enabled:\s*Yes/i.test(result.stdout);
+  const pointsToUs = /Server:\s*127\.0\.0\.1/i.test(result.stdout);
+  return enabled && pointsToUs;
+}
+
 export interface CaStatus {
   exists: boolean;
   trusted: boolean;

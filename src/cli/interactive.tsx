@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import { loadConfig } from '../server/config.js';
 import { RoxyProxyServer } from '../server/index.js';
 import { Database } from '../storage/db.js';
-import { enableSystemProxy, disableSystemProxy, installCaCert, checkCaStatus } from './system-proxy.js';
+import { enableSystemProxy, disableSystemProxy, installCaCert, checkCaStatus, checkSystemProxyStatus } from './system-proxy.js';
 import type { CaStatus } from './system-proxy.js';
 import type { RequestRecord } from '../shared/types.js';
 
@@ -58,7 +58,7 @@ interface MenuHeading {
 
 type MenuEntry = MenuItem | MenuHeading;
 
-function buildMenu(proxyRunning: boolean, caStatus: CaStatus): MenuEntry[] {
+function buildMenu(proxyRunning: boolean, caStatus: CaStatus, systemProxyEnabled: boolean): MenuEntry[] {
   const caBadge = !caStatus.exists
     ? { badge: 'not generated', badgeColor: 'gray' }
     : caStatus.trusted
@@ -79,8 +79,9 @@ function buildMenu(proxyRunning: boolean, caStatus: CaStatus): MenuEntry[] {
 
     { type: 'heading', label: 'Setup' },
     { type: 'item', label: 'Trust CA certificate', value: 'trust-ca', hint: 'Install cert for HTTPS interception', ...caBadge },
-    { type: 'item', label: 'Set system proxy', value: 'proxy-on', hint: 'Route all traffic through RoxyProxy' },
-    { type: 'item', label: 'Remove system proxy', value: 'proxy-off', hint: 'Restore direct connections' },
+    systemProxyEnabled
+      ? { type: 'item', label: 'Disable system proxy', value: 'toggle-system-proxy', hint: 'Restore direct connections', badge: 'enabled', badgeColor: 'green' }
+      : { type: 'item', label: 'Enable system proxy', value: 'toggle-system-proxy', hint: 'Route all traffic through RoxyProxy', badge: 'disabled', badgeColor: 'gray' },
 
     { type: 'heading', label: '' },
     { type: 'item', label: 'Quit', value: 'quit' },
@@ -325,14 +326,17 @@ function App() {
   const [server, setServer] = useState<RoxyProxyServer | null>(null);
   const [cursor, setCursor] = useState(0);
   const [caStatus, setCaStatus] = useState<CaStatus>({ exists: false, trusted: false, certPath: '' });
+  const [systemProxyEnabled, setSystemProxyEnabled] = useState(false);
 
-  // Check CA status on startup
+  // Check status on startup
   useEffect(() => {
+    process.stdout.write('\x1Bc'); // clear screen
     checkCaStatus().then(setCaStatus);
+    checkSystemProxyStatus().then(setSystemProxyEnabled);
   }, []);
 
   const proxyRunning = !!server;
-  const menu = buildMenu(proxyRunning, caStatus);
+  const menu = buildMenu(proxyRunning, caStatus, systemProxyEnabled);
   const selectableItems = menu.filter((e): e is MenuItem => e.type === 'item');
 
   useInput((input, key) => {
@@ -424,19 +428,20 @@ function App() {
         setScreen('menu');
         break;
       }
-      case 'proxy-on': {
-        setScreen('working');
-        setWorkingLabel('Configuring system proxy...');
-        const onResult = await enableSystemProxy();
-        setMessage(onResult.message);
-        setScreen('menu');
-        break;
-      }
-      case 'proxy-off': {
-        setScreen('working');
-        setWorkingLabel('Removing system proxy...');
-        const offResult = await disableSystemProxy();
-        setMessage(offResult.message);
+      case 'toggle-system-proxy': {
+        if (systemProxyEnabled) {
+          setScreen('working');
+          setWorkingLabel('Disabling system proxy...');
+          const offResult = await disableSystemProxy();
+          setMessage(offResult.message);
+          if (offResult.ok) setSystemProxyEnabled(false);
+        } else {
+          setScreen('working');
+          setWorkingLabel('Enabling system proxy...');
+          const onResult = await enableSystemProxy();
+          setMessage(onResult.message);
+          if (onResult.ok) setSystemProxyEnabled(true);
+        }
         setScreen('menu');
         break;
       }
