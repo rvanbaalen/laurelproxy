@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.2...roxyproxy-v0.1.3) (2026-03-17)
+
+
+### Bug Fixes
+
+* use actual UI port instead of hardcoded 8081 in interactive CLI ([16928e3](https://github.com/rvanbaalen/roxyproxy/commit/16928e3f7ee1cfb8c09c0ebf910ad2bbb244acb7))
+
 ## [0.1.2](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.1...roxyproxy-v0.1.2) (2026-03-17)
 
 
