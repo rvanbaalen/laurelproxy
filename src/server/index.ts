@@ -60,7 +60,7 @@ export class RoxyProxyServer {
 
     const uiDistPath = path.join(import.meta.dirname, '..', '..', 'dist', 'ui');
     app.use(express.static(uiDistPath));
-    app.get('*', (_req, res) => {
+    app.get('/{*path}', (_req, res) => {
       res.sendFile(path.join(uiDistPath, 'index.html'));
     });
 
