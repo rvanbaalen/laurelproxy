@@ -1,6 +1,33 @@
 import pc from 'picocolors';
 import type { RequestRecord, PaginatedResponse } from '../shared/types.js';
 
+// ── Shared column widths ──
+
+export const COL = {
+  time: 12,
+  method: 8,
+  status: 8,
+  host: 30,
+  path: 30,
+  duration: 10,
+  size: 10,
+} as const;
+
+// ── ANSI-safe padding ──
+
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+
+function visibleLength(str: string): number {
+  return str.replace(ANSI_RE, '').length;
+}
+
+function padAnsi(str: string, width: number): string {
+  const pad = width - visibleLength(str);
+  return pad > 0 ? str + ' '.repeat(pad) : str;
+}
+
+// ── Colors ──
+
 const methodColor = (method: string): string => {
   switch (method) {
     case 'GET': return pc.blue(method);
@@ -21,6 +48,8 @@ const statusColor = (status: number | null): string => {
   return pc.red(s);
 };
 
+// ── Table formatters ──
+
 export function formatRequests(result: PaginatedResponse<RequestRecord>, format: string): string {
   if (format === 'json') {
     return JSON.stringify(result, null, 2);
@@ -30,25 +59,27 @@ export function formatRequests(result: PaginatedResponse<RequestRecord>, format:
     return `\n  ${pc.dim('No requests found.')}\n`;
   }
 
+  const totalWidth = COL.method + COL.status + COL.host + COL.path + COL.duration + COL.size;
+
   const header = pc.dim(
     '  ' +
-    'METHOD'.padEnd(10) +
-    'STATUS'.padEnd(8) +
-    'HOST'.padEnd(32) +
-    'PATH'.padEnd(32) +
-    'TIME'.padEnd(10) +
-    'SIZE'.padEnd(10)
+    'METHOD'.padEnd(COL.method) +
+    'STATUS'.padEnd(COL.status) +
+    'HOST'.padEnd(COL.host) +
+    'PATH'.padEnd(COL.path) +
+    'TIME'.padEnd(COL.duration) +
+    'SIZE'.padEnd(COL.size)
   );
 
-  const divider = pc.dim('  ' + '─'.repeat(100));
+  const divider = pc.dim('  ' + '─'.repeat(totalWidth));
 
   const rows = result.data.map((r) => {
     return '  ' +
-      methodColor(r.method || '').padEnd(10 + 10) + // extra for ANSI codes
-      statusColor(r.status).padEnd(8 + 10) +
-      (r.host || '').slice(0, 30).padEnd(32) +
-      pc.dim((r.path || '').slice(0, 30)).padEnd(32 + 10) +
-      pc.dim(r.duration ? `${r.duration}ms` : '-').padEnd(10 + 10) +
+      padAnsi(methodColor(r.method || ''), COL.method) +
+      padAnsi(statusColor(r.status), COL.status) +
+      (r.host || '').slice(0, COL.host - 2).padEnd(COL.host) +
+      padAnsi(pc.dim((r.path || '').slice(0, COL.path - 2)), COL.path) +
+      padAnsi(pc.dim(r.duration ? `${r.duration}ms` : '-'), COL.duration) +
       pc.dim(formatBytes(r.response_size || 0));
   });
 
@@ -110,6 +141,29 @@ function formatBody(body: Buffer | null, contentType: string | null): string {
     } catch {}
   }
   return `  ${str}`;
+}
+
+export function formatTailLine(r: RequestRecord, format: string): string {
+  if (format === 'json') {
+    return JSON.stringify({
+      id: r.id,
+      timestamp: r.timestamp,
+      method: r.method,
+      status: r.status,
+      host: r.host,
+      path: r.path,
+      url: r.url,
+      duration: r.duration,
+    });
+  }
+
+  return '  ' +
+    padAnsi(pc.dim(new Date(r.timestamp).toLocaleTimeString()), COL.time) +
+    padAnsi(methodColor(r.method || ''), COL.method) +
+    padAnsi(statusColor(r.status), COL.status) +
+    (r.host || '').slice(0, COL.host - 2).padEnd(COL.host) +
+    padAnsi(pc.dim((r.path || '').slice(0, COL.path - 2)), COL.path) +
+    pc.dim(r.duration ? `${r.duration}ms` : '-');
 }
 
 function formatBytes(bytes: number): string {

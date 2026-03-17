@@ -107,6 +107,7 @@ export function createApiRouter(
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
     });
+    res.flushHeaders();
 
     const unsubRequest = events.subscribe((records) => {
       for (const record of records) {
