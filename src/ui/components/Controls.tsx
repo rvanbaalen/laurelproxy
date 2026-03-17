@@ -1,0 +1,55 @@
+import { useState, useEffect } from 'react';
+import { fetchStatus, startProxy, stopProxy, clearRequests } from '../api.ts';
+import type { ProxyStatus } from '../api.ts';
+
+interface ControlsProps {
+  onClear: () => void;
+}
+
+export function Controls({ onClear }: ControlsProps) {
+  const [status, setStatus] = useState<ProxyStatus | null>(null);
+
+  const loadStatus = async () => {
+    try { const s = await fetchStatus(); setStatus(s); } catch { setStatus(null); }
+  };
+
+  useEffect(() => {
+    loadStatus();
+    const timer = setInterval(loadStatus, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const toggleProxy = async () => {
+    if (status?.running) { await stopProxy(); } else { await startProxy(); }
+    await loadStatus();
+  };
+
+  const handleClear = async () => { await clearRequests(); onClear(); };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  return (
+    <div className="flex items-center gap-4 p-3 bg-gray-900 border-b border-gray-800">
+      <h1 className="text-lg font-bold text-white mr-4">RoxyProxy</h1>
+      <button onClick={toggleProxy} className={`px-3 py-1 rounded text-sm font-medium ${status?.running ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
+        {status?.running ? 'Stop' : 'Start'}
+      </button>
+      <button onClick={handleClear} className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded text-sm">Clear</button>
+      {status && (
+        <div className="flex items-center gap-4 text-sm text-gray-400 ml-auto">
+          <span className={`flex items-center gap-1 ${status.running ? 'text-green-400' : 'text-red-400'}`}>
+            <span className={`w-2 h-2 rounded-full ${status.running ? 'bg-green-400' : 'bg-red-400'}`} />
+            {status.running ? 'Running' : 'Stopped'}
+          </span>
+          <span>Port: {status.proxyPort}</span>
+          <span>Requests: {status.requestCount}</span>
+          <span>DB: {formatBytes(status.dbSizeBytes)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
