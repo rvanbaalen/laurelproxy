@@ -65,10 +65,21 @@ export class RoxyProxyServer {
       res.sendFile(path.join(uiDistPath, 'index.html'));
     });
 
-    const uiPort = await new Promise<number>((resolve) => {
+    const uiPort = await new Promise<number>((resolve, reject) => {
       this.apiServer = app.listen(this.config.uiPort, () => {
-        const addr = this.apiServer!.address() as net.AddressInfo;
+        const addr = this.apiServer!.address() as net.AddressInfo | null;
+        if (!addr) {
+          reject(new Error(`UI server failed to bind to port ${this.config.uiPort}`));
+          return;
+        }
         resolve(addr.port);
+      });
+      this.apiServer!.on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          reject(new Error(`Port ${this.config.uiPort} is already in use. Is another instance running?`));
+        } else {
+          reject(err);
+        }
       });
       this.apiServer!.on('connection', (socket) => {
         this.connections.add(socket);

@@ -32,7 +32,14 @@ export class ProxyServer {
 
     this.writeTimer = setInterval(() => this.flushWrites(), 100);
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      this.server!.on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          reject(new Error(`Port ${this.config.proxyPort} is already in use. Is another instance running?`));
+        } else {
+          reject(err);
+        }
+      });
       this.server!.listen(this.config.proxyPort, () => {
         const addr = this.server!.address() as net.AddressInfo;
         resolve(addr.port);
