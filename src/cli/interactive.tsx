@@ -151,12 +151,12 @@ function Header({ running }: { running: boolean }) {
 
 type Screen = 'menu' | 'status' | 'requests' | 'request-detail' | 'working';
 
-function StatusView({ onBack }: { onBack: () => void }) {
+function StatusView({ onBack, port }: { onBack: () => void; port: number }) {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiGet(8081, '/api/status')
+    apiGet(port, '/api/status')
       .then(body => setStatus(JSON.parse(body)))
       .catch(() => setError('Proxy is not running.'));
   }, []);
@@ -332,6 +332,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [server, setServer] = useState<RoxyProxyServer | null>(null);
+  const [uiPort, setUiPort] = useState(0);
   const [cursor, setCursor] = useState(0);
   const [caStatus, setCaStatus] = useState<CaStatus>({ exists: false, trusted: false, certPath: '' });
   const [systemProxyEnabled, setSystemProxyEnabled] = useState(false);
@@ -374,15 +375,19 @@ function App() {
         if (proxyRunning && server) {
           setScreen('working');
           setWorkingLabel('Stopping proxy...');
-          await apiPost(8081, '/api/proxy/stop');
-          setMessage('Proxy stopped.');
+          try {
+            await apiPost(uiPort, '/api/proxy/stop');
+            setMessage('Proxy stopped.');
+          } catch {
+            setMessage('Failed to stop proxy.');
+          }
           setScreen('menu');
         } else if (!proxyRunning && server) {
           // Proxy was stopped externally (e.g. via web UI) — restart it
           setScreen('working');
           setWorkingLabel('Starting proxy...');
           try {
-            await apiPost(8081, '/api/proxy/start');
+            await apiPost(uiPort, '/api/proxy/start');
             setMessage('Proxy restarted.');
           } catch (e) {
             setMessage(`Failed: ${(e as Error).message}`);
@@ -399,6 +404,7 @@ function App() {
             const s = new RoxyProxyServer(config);
             const ports = await s.start();
             setServer(s);
+            setUiPort(ports.uiPort);
             setMessage(`Proxy on :${ports.proxyPort}, UI on :${ports.uiPort}`);
           } catch (e) {
             setMessage(`Failed: ${(e as Error).message}`);
@@ -416,7 +422,7 @@ function App() {
       case 'clear': {
         try {
           await new Promise<void>((resolve, reject) => {
-            const req = http.request({ host: '127.0.0.1', port: 8081, path: '/api/requests', method: 'DELETE' }, (res) => {
+            const req = http.request({ host: '127.0.0.1', port: uiPort, path: '/api/requests', method: 'DELETE' }, (res) => {
               res.resume();
               res.on('end', () => res.statusCode === 200 ? resolve() : reject());
             });
@@ -449,6 +455,7 @@ function App() {
             const s = new RoxyProxyServer(config);
             const ports = await s.start();
             setServer(s);
+            setUiPort(ports.uiPort);
             setMessage(`Proxy on :${ports.proxyPort}, UI on :${ports.uiPort}`);
           } catch (e) {
             setMessage(`Failed to start proxy: ${(e as Error).message}`);
@@ -456,7 +463,7 @@ function App() {
             break;
           }
         }
-        const uiUrl = 'http://127.0.0.1:8081';
+        const uiUrl = `http://127.0.0.1:${uiPort}`;
         const cmd = os.platform() === 'darwin' ? 'open' : os.platform() === 'win32' ? 'start' : 'xdg-open';
         execFile(cmd, [uiUrl], () => {});
         setMessage(`Opening ${uiUrl}`);
@@ -510,7 +517,7 @@ function App() {
 
   // Sub-screens
   if (screen === 'status') {
-    return (<Box flexDirection="column" padding={1}><Header running={proxyRunning} /><StatusView onBack={() => setScreen('menu')} /></Box>);
+    return (<Box flexDirection="column" padding={1}><Header running={proxyRunning} /><StatusView onBack={() => setScreen('menu')} port={uiPort} /></Box>);
   }
   if (screen === 'requests') {
     return (<Box flexDirection="column" padding={1}><Header running={proxyRunning} /><RequestsView onBack={() => setScreen('menu')} onSelect={(id) => { setSelectedRequestId(id); setScreen('request-detail'); }} /></Box>);
