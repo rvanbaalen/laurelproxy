@@ -117,6 +117,8 @@ Running `roxyproxy` with no arguments launches an interactive terminal menu:
 roxyproxy
 ```
 
+![Interactive mode](assets/interactive-mode.png)
+
 The interactive menu provides access to all features:
 
 - **Start/Stop proxy** -- toggle the proxy server on and off
