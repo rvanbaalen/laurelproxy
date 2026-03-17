@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import pc from 'picocolors';
 import { registerStart } from './commands/start.js';
 import { registerStop } from './commands/stop.js';
 import { registerStatus } from './commands/status.js';
@@ -14,8 +13,17 @@ import { registerProxyOff } from './commands/proxy-off.js';
 const program = new Command();
 program
   .name('roxyproxy')
-  .description(pc.dim('HTTP/HTTPS intercepting proxy with CLI and web UI'))
+  .description('HTTP/HTTPS intercepting proxy with CLI and web UI')
   .version('0.1.0');
+
+// Interactive mode (default when no command given)
+program
+  .command('interactive', { isDefault: true })
+  .description('Launch interactive menu')
+  .action(async () => {
+    const { launchInteractive } = await import('./interactive.js');
+    await launchInteractive();
+  });
 
 registerStart(program);
 registerStop(program);
