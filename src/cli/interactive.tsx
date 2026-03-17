@@ -311,7 +311,13 @@ function App() {
   const [server, setServer] = useState<RoxyProxyServer | null>(null);
   const [cursor, setCursor] = useState(0);
 
-  useInput((_input, key) => {
+  useInput((input, key) => {
+    // Ctrl+C or q from any screen
+    if ((key.ctrl && input === 'c') || (screen === 'menu' && input === 'q')) {
+      if (server) server.stop().then(() => exit());
+      else exit();
+      return;
+    }
     if (screen !== 'menu') return;
     if (key.upArrow) setCursor(c => Math.max(0, c - 1));
     if (key.downArrow) setCursor(c => Math.min(selectableItems.length - 1, c + 1));
