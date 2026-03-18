@@ -65,6 +65,34 @@ export async function stopProxy(): Promise<void> {
   await fetch(`${API_BASE}/proxy/stop`, { method: 'POST' });
 }
 
+export interface ReplayRequest {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: string;
+}
+
+export interface ReplayResponse {
+  status: number;
+  headers: Record<string, string | string[]>;
+  body: string;
+  duration: number;
+  size: number;
+}
+
+export async function replayRequest(request: ReplayRequest): Promise<ReplayResponse> {
+  const res = await fetch(`${API_BASE}/replay`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Replay failed');
+  }
+  return res.json();
+}
+
 export interface SSEState {
   requests: RequestRecord[];
   statusEvent: { running: boolean; proxyPort: number } | null;
