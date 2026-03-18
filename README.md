@@ -32,6 +32,7 @@
   - [proxy-off](#proxy-off-macos)
 - [Web UI](#web-ui)
 - [HTTPS Interception](#https-interception)
+- [iOS Device Inspection](#ios-device-inspection)
 - [System Proxy](#system-proxy-macos)
 - [Configuration](#configuration)
 - [REST API](#rest-api)
@@ -516,6 +517,91 @@ roxyproxy proxy-on
 
 ---
 
+## iOS Device Inspection
+
+RoxyProxy can inspect HTTP/HTTPS traffic from an iOS device. Your computer and iOS device must be on the same Wi-Fi network.
+
+### Setup
+
+**Step 1: Start RoxyProxy on your computer**
+
+```bash
+roxyproxy start
+```
+
+**Step 2: Find your computer's local IP address**
+
+```bash
+# macOS
+ipconfig getifaddr en0
+
+# Linux
+hostname -I | awk '{print $1}'
+```
+
+Note the IP (e.g., `192.168.1.42`).
+
+**Step 3: Configure the iOS device to use the proxy**
+
+1. Open **Settings > Wi-Fi**
+2. Tap the **(i)** icon next to your connected network
+3. Scroll down and tap **Configure Proxy**
+4. Select **Manual**
+5. Set **Server** to your computer's IP (e.g., `192.168.1.42`)
+6. Set **Port** to `8080`
+7. Tap **Save**
+
+HTTP traffic is now being captured. For HTTPS inspection, continue below.
+
+**Step 4: Install the CA certificate on iOS**
+
+Open Safari on your iOS device and navigate to:
+
+```
+http://<your-computer-ip>:8081/api/ca.crt
+```
+
+For example: `http://192.168.1.42:8081/api/ca.crt`
+
+Safari will prompt you to download a configuration profile. Tap **Allow**.
+
+**Step 5: Install the profile**
+
+1. Open **Settings > General > VPN & Device Management** (or **Profiles & Device Management** on older iOS)
+2. Tap the **RoxyProxy CA** profile
+3. Tap **Install** and enter your passcode
+
+**Step 6: Enable full trust for the certificate**
+
+1. Open **Settings > General > About > Certificate Trust Settings**
+2. Toggle **Enable Full Trust** for **RoxyProxy CA**
+3. Tap **Continue** on the warning dialog
+
+HTTPS traffic from the iOS device is now fully inspectable through RoxyProxy.
+
+### Viewing traffic
+
+Open the web UI from any browser:
+
+```
+http://<your-computer-ip>:8081
+```
+
+Or use the CLI:
+
+```bash
+roxyproxy requests --tail
+```
+
+### Cleanup
+
+When you're done inspecting, remove the proxy from iOS:
+
+1. **Settings > Wi-Fi > (i) > Configure Proxy > Off**
+2. Optionally remove the CA profile: **Settings > General > VPN & Device Management > RoxyProxy CA > Remove Profile**
+
+---
+
 ## System Proxy (macOS)
 
 On macOS, RoxyProxy can configure itself as the system-wide HTTP/HTTPS proxy. This routes all traffic from most applications through the proxy without needing per-app configuration.
@@ -648,6 +734,14 @@ Response:
   "requestCount": 142,
   "dbSizeBytes": 3358720
 }
+```
+
+#### `GET /api/ca.crt`
+
+Download the RoxyProxy CA certificate. Useful for installing on mobile devices -- open this URL in the device's browser to trigger a certificate install prompt.
+
+```bash
+curl -O http://127.0.0.1:8081/api/ca.crt
 ```
 
 #### `POST /api/proxy/start`

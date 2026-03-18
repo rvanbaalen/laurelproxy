@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import fs from 'node:fs';
 import type { Database } from '../storage/db.js';
 import type { EventManager } from './events.js';
 import type { RequestFilter, RequestRecord } from '../shared/types.js';
+import type { CertificateAuthority } from './ssl.js';
 
 function serializeRecord(r: RequestRecord): Record<string, unknown> {
   return {
@@ -23,6 +25,7 @@ export function createApiRouter(
   db: Database,
   events: EventManager,
   proxy: ProxyControl,
+  ca?: CertificateAuthority,
 ): Router {
   const router = Router();
 
@@ -73,6 +76,21 @@ export function createApiRouter(
       requestCount: db.getRequestCount(),
       dbSizeBytes: db.getDbSize(),
     });
+  });
+
+  router.get('/ca.crt', (_req: Request, res: Response) => {
+    if (!ca) {
+      res.status(404).json({ error: 'CA not available' });
+      return;
+    }
+    const certPath = ca.getCaCertPath();
+    if (!fs.existsSync(certPath)) {
+      res.status(404).json({ error: 'CA certificate not found. Start the proxy first to generate it.' });
+      return;
+    }
+    res.setHeader('Content-Type', 'application/x-x509-ca-cert');
+    res.setHeader('Content-Disposition', 'attachment; filename="roxyproxy-ca.crt"');
+    res.sendFile(certPath);
   });
 
   router.post('/proxy/start', async (_req: Request, res: Response) => {
