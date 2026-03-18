@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.5](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.4...roxyproxy-v0.1.5) (2026-03-18)
+
+
+### Features
+
+* **ui:** add copy-as-curl button to request detail panel ([a254a70](https://github.com/rvanbaalen/roxyproxy/commit/a254a70dced9b070d47bbb63c62a76297b6ed7dc))
+* **ui:** add network hostname and CA cert link to toolbar ([9e2b132](https://github.com/rvanbaalen/roxyproxy/commit/9e2b1328e89b04147f50b9364ec1ff310645efd5))
+
+
+### Bug Fixes
+
+* **storage:** reclaim disk space on clear and fix stale db size indicator ([01f1914](https://github.com/rvanbaalen/roxyproxy/commit/01f19144ce44938d6dffc8f99f74eba34dcffd63))
+
 ## [0.1.4](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.3...roxyproxy-v0.1.4) (2026-03-18)
 
 
