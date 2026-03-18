@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.4](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.3...roxyproxy-v0.1.4) (2026-03-18)
+
+
+### Features
+
+* add ios inspection support ([#5](https://github.com/rvanbaalen/roxyproxy/issues/5)) ([eaf7573](https://github.com/rvanbaalen/roxyproxy/commit/eaf75738899309f80dae0296c289039fc21e8682))
+* **cli:** add interactive tail TUI with auto-start proxy and system proxy ([6ac8035](https://github.com/rvanbaalen/roxyproxy/commit/6ac80350a6740f99470058c823f46c49bffd22cc))
+
+
+### Bug Fixes
+
+* **cli:** pretty-print JSON bodies and decode base64 in tail TUI detail view ([4b30400](https://github.com/rvanbaalen/roxyproxy/commit/4b30400eb2e949ce044d03f0e3789ba34276bd6c))
+
 ## [0.1.3](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.2...roxyproxy-v0.1.3) (2026-03-17)
 
 
