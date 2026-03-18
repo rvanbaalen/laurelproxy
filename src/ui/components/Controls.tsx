@@ -32,7 +32,7 @@ export function Controls({ onClear, statusEvent }: ControlsProps) {
     await loadStatus();
   };
 
-  const handleClear = async () => { await clearRequests(); onClear(); };
+  const handleClear = async () => { await clearRequests(); onClear(); await loadStatus(); };
 
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes}B`;

@@ -11,7 +11,14 @@ export class Database {
 
     this.db = new BetterSqlite3(dbPath);
     this.db.pragma('journal_mode = WAL');
-    this.db.pragma('auto_vacuum = INCREMENTAL');
+
+    // auto_vacuum can only be set on a fresh DB; convert existing ones with a one-time VACUUM
+    const currentMode = this.db.pragma('auto_vacuum', { simple: true }) as number;
+    if (currentMode !== 2) {
+      this.db.pragma('auto_vacuum = INCREMENTAL');
+      this.db.exec('VACUUM');
+    }
+
     this.init();
   }
 
@@ -141,6 +148,7 @@ export class Database {
 
   deleteAll(): void {
     this.db.exec('DELETE FROM requests');
+    this.db.exec('VACUUM');
   }
 
   deleteOlderThan(timestampMs: number): number {
