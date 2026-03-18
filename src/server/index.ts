@@ -58,7 +58,7 @@ export class RoxyProxyServer {
       },
     };
 
-    app.use('/api', createApiRouter(this.db, this.events, proxyControl));
+    app.use('/api', createApiRouter(this.db, this.events, proxyControl, this.ca));
 
     const uiDistPath = path.join(import.meta.dirname, '..', '..', 'dist', 'ui');
     app.use(express.static(uiDistPath));
