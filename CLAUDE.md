@@ -19,3 +19,28 @@ npm run dev:ui       # dev server for web UI
 ## Testing
 
 Test framework: vitest. Run with `npm test`. Tests are colocated with source (`src/**/*.test.ts`) and in `tests/integration/`.
+
+## Demo Recordings
+
+Terminal demos use asciinema. The setup is reusable for future feature demos.
+
+- `demo/run-demo.sh` — the scripted demo (emulated CLI + simulated AI agent UI)
+- `demo/record.sh` — wrapper that records with asciinema and generates a GIF
+- `demo/roxyproxy-demo.cast` — the asciinema recording (text-based, 11KB)
+- `demo/roxyproxy-demo.gif` — animated GIF for the GitHub README
+
+The website (`website` branch) embeds the `.cast` file via asciinema-player in the hero section (`src/components/DemoPlayer.astro`). The cast file is served from `public/demo.cast`.
+
+### Recording a new demo
+
+```bash
+npm run build                    # build the CLI first
+brew install asciinema agg       # if not installed
+bash demo/record.sh              # records + generates GIF
+```
+
+Then copy the cast to the website branch: `git show main:demo/roxyproxy-demo.cast > public/demo.cast`
+
+### Creating additional feature demos
+
+The demo script helpers (`type_text`, `shell_prompt`, `agent_say`, `agent_tool`, `agent_think`, `print_agent_output`) are reusable. Copy `demo/run-demo.sh` as a starting point, modify the scenes, and record with the same asciinema setup.

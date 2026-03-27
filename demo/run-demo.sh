@@ -1,6 +1,6 @@
 #!/bin/bash
 # RoxyProxy Demo — polished asciinema recording
-# Real proxy data, simulated AI coding agent UI
+# Emulated CLI + simulated AI agent interaction
 
 # --- Colors ---
 RED='\033[1;31m'
@@ -25,18 +25,15 @@ type_text() {
   done
 }
 
-# Show a shell prompt, type command, run it
 shell_prompt() {
   printf "${GREEN}❯ ${RESET}"
 }
 
-# Agent prompt (simulates an AI coding agent input)
 agent_input() {
   echo ""
   printf "${MAGENTA}You: ${RESET}"
 }
 
-# Agent "thinking" with spinner
 agent_think() {
   printf "${DIM}"
   local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
@@ -50,10 +47,8 @@ agent_think() {
   printf "${RESET}"
 }
 
-# Agent response text (supports inline ANSI codes)
 agent_say() {
   printf "  ${CYAN}▌${RESET} "
-  # Print word by word for natural pacing, preserving ANSI codes
   local words=($1)
   for word in "${words[@]}"; do
     printf '%b ' "$word"
@@ -62,7 +57,6 @@ agent_say() {
   echo ""
 }
 
-# Agent tool use block
 agent_tool() {
   echo ""
   printf "  ${DIM}┌─ ${YELLOW}⚡ Tool: ${RESET}${WHITE}$1${RESET}\n"
@@ -71,107 +65,109 @@ agent_tool() {
   sleep 0.5
 }
 
-# Print colored JSON-like output (simplified, not actual JSON)
 print_agent_output() {
   echo ""
   printf "  ${DIM}│${RESET}\n"
-  printf "  ${DIM}│${RESET}  ${WHITE}${BOLD}POST${RESET} ${BLUE}https://httpbin.org/status/422${RESET} ${RED}→ 422${RESET} ${DIM}(347ms)${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${WHITE}${BOLD}POST${RESET} ${BLUE}https://api.example.com/webhooks${RESET} ${RED}→ 422${RESET} ${DIM}(218ms)${RESET}\n"
   printf "  ${DIM}│${RESET}\n"
   printf "  ${DIM}│${RESET}  ${YELLOW}Request${RESET}\n"
   printf "  ${DIM}│${RESET}  ${DIM}Content-Type:${RESET} application/json\n"
-  printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"webhook_id\": \"evt_123\", \"type\": \"payment.failed\"}${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"event\": \"invoice.paid\", \"amount\": 4999}${RESET}\n"
   printf "  ${DIM}│${RESET}\n"
   printf "  ${DIM}│${RESET}  ${YELLOW}Response${RESET}\n"
   printf "  ${DIM}│${RESET}  ${DIM}Status:${RESET}       ${RED}422 Unprocessable Entity${RESET}\n"
-  printf "  ${DIM}│${RESET}  ${DIM}Server:${RESET}       gunicorn/19.9.0\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"error\": \"missing required field: idempotency_key\"}${RESET}\n"
   printf "  ${DIM}│${RESET}  ${DIM}Error:${RESET}        ${RED}true${RESET}\n"
   printf "  ${DIM}│${RESET}\n"
 }
 
-# --- Resolve roxyproxy binary ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-if [ -f "$REPO_ROOT/dist/cli/index.js" ]; then
-  ROXY="node $REPO_ROOT/dist/cli/index.js"
-elif command -v roxyproxy &>/dev/null && roxyproxy --version &>/dev/null; then
-  ROXY="roxyproxy"
-else
-  echo "Error: roxyproxy not found. Run 'npm run build' first."
-  exit 1
-fi
-
-# --- Pre-record: capture real traffic (hidden from recording) ---
-$ROXY stop --ui-port 8081 2>/dev/null || true
-pkill -f "dist/cli/index.js start" 2>/dev/null || true
-sleep 0.5
-$ROXY start --port 8080 --ui-port 8081 &>/dev/null &
-sleep 2
-curl -s -x http://127.0.0.1:8080 -X POST https://httpbin.org/status/422 \
-  -H 'Content-Type: application/json' \
-  -d '{"webhook_id":"evt_123","type":"payment.failed"}' -o /dev/null 2>/dev/null
-sleep 1
-pkill -f "dist/cli/index.js start" 2>/dev/null || true
-sleep 1
-
 # ============================================================
-# VISIBLE DEMO STARTS HERE
+# SCENE 1: Start roxyproxy
 # ============================================================
 clear
 echo ""
-sleep 0.8
-
-# --- Scene 1: The failing request ---
-printf "${DIM}# A webhook call is failing in production...${RESET}\n"
-sleep 1.2
-echo ""
+sleep 0.5
 
 shell_prompt
-type_text "curl -X POST https://httpbin.org/status/422 -H 'Content-Type: application/json' -d '{\"webhook_id\":\"evt_123\"}'" 0.025
+type_text "roxyproxy start" 0.05
 sleep 0.4
 echo ""
+echo ""
+
+# Emulated CLI banner
 sleep 0.3
-printf "${RED}HTTP/1.1 422 Unprocessable Entity${RESET}\n"
+printf "${CYAN}  ___                ___                    ${RESET}\n"
+sleep 0.05
+printf "${CYAN} | _ \\___ __ ___  _ | _ \\_ _ _____ ___  _  ${RESET}\n"
+sleep 0.05
+printf "${CYAN} |   / _ \\\\\\ \\ / || || ___/ '_/ _ \\ \\ /| || |${RESET}\n"
+sleep 0.05
+printf "${CYAN} |_|_\\___//_\\_\\\\\\_, ||_|  |_| \\___/_\\_\\ \\_, |${RESET}\n"
+sleep 0.05
+printf "${CYAN}                |__/                   |__/ ${RESET}\n"
+echo ""
+sleep 0.4
+
+printf "  ${GREEN}●${RESET} Proxy    ${CYAN}http://127.0.0.1:8080${RESET}\n"
+sleep 0.15
+printf "  ${GREEN}●${RESET} Web UI   ${CYAN}http://127.0.0.1:8081${RESET}\n"
+sleep 0.15
+printf "  ${GREEN}●${RESET} Network  ${CYAN}http://192.168.1.42:8081${RESET}\n"
+echo ""
+sleep 0.6
+
+printf "  ${GREEN}✔${RESET} CA certificate installed and trusted\n"
+sleep 0.5
+printf "  ${GREEN}✔${RESET} System proxy enabled ${DIM}(all traffic routed through RoxyProxy)${RESET}\n"
+sleep 0.5
+echo ""
+printf "  ${DIM}Capturing traffic... press Ctrl+C to stop${RESET}\n"
+sleep 2
+
+# ============================================================
+# SCENE 2: Start the AI agent
+# ============================================================
+echo ""
+shell_prompt
+type_text "ai-agent" 0.05
+sleep 0.3
+echo ""
+echo ""
+printf "  ${GREEN}●${RESET} AI coding agent connected ${DIM}(roxyproxy plugin loaded)${RESET}\n"
 sleep 1.5
 
-# --- Scene 2: Ask the AI agent ---
+# ============================================================
+# SCENE 3: AI agent debugging
+# ============================================================
+
 agent_input
 sleep 0.3
-type_text "My webhook POST to httpbin.org keeps returning a 422. Traffic is going through roxyproxy — can you find out what's wrong?" 0.025
+type_text "Some of my webhook calls are failing. Can you check what's going wrong?" 0.03
 sleep 0.6
 echo ""
 echo ""
 
-# --- Scene 3: Agent thinks and acts ---
 agent_think
 echo ""
 agent_say "Let me check the captured traffic for failing requests."
 sleep 0.5
 
-agent_tool "Bash" "roxyproxy requests --host httpbin.org --failed --format agent"
+agent_tool "Bash" "roxyproxy requests --failed --format agent"
 
-# Show colorized output (simulated from real data)
 print_agent_output
 sleep 2.5
 
-# --- Scene 4: Agent diagnosis ---
 echo ""
-agent_say "Found it. Your POST to ${BLUE}httpbin.org/status/422${RESET} is being rejected"
-agent_say "with a ${RED}422 Unprocessable Entity${RESET}."
+agent_say "Found it. Your POST to ${BLUE}api.example.com/webhooks${RESET} is returning"
+agent_say "a ${RED}422 Unprocessable Entity${RESET}."
 sleep 0.4
 echo ""
-agent_say "The request body sends ${WHITE}webhook_id${RESET} and ${WHITE}type${RESET} fields, but the"
-agent_say "endpoint returns an empty body. This is a schema validation"
-agent_say "failure — the server understood your request but won't process it."
+agent_say "The response body says: ${WHITE}\"missing required field: idempotency_key\"${RESET}."
+agent_say "Your payload sends ${WHITE}event${RESET} and ${WHITE}amount${RESET} but the API requires an"
+agent_say "${WHITE}idempotency_key${RESET} field for webhook delivery."
 sleep 0.6
 echo ""
-agent_say "${YELLOW}Fix:${RESET} Check if the endpoint requires additional fields beyond"
-agent_say "${WHITE}webhook_id${RESET} and ${WHITE}type${RESET}. Compare your payload against the API docs."
-sleep 2
+agent_say "${YELLOW}Fix:${RESET} Add an ${WHITE}idempotency_key${RESET} to your webhook payload."
 
-# --- Closing ---
-echo ""
-echo ""
-printf "${DIM}────────────────────────────────────────────────────────────${RESET}\n"
-printf "${BOLD}One prompt. Zero manual steps.${RESET}\n"
-printf "${DIM}roxyproxy — the HTTP proxy your AI agent can use${RESET}\n"
-sleep 3
+# Hold the final frame
+sleep 5
