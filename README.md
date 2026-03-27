@@ -2,146 +2,84 @@
   <img src="assets/logo.png" alt="RoxyProxy" width="600" />
 </p>
 
+<h3 align="center">The HTTP proxy your AI agent can use</h3>
+
 <p align="center">
-  HTTP/HTTPS intercepting proxy with a CLI and web UI.<br>
-  Captures traffic, stores it in SQLite, and makes it queryable -- by humans and LLMs alike.<br>
-  <strong>Developed and tested on macOS.</strong>
+  Intercept HTTP/HTTPS traffic. Store it in SQLite. Query it from CLI, API, or your AI coding assistant.<br>
+  <strong>One prompt to debug any API.</strong>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@rvanbaalen/roxyproxy"><img src="https://img.shields.io/npm/v/@rvanbaalen/roxyproxy" alt="npm version" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue" alt="Platform" />
 </p>
-
-## Table of Contents
-
-- [Platform](#platform)
-- [Installation](#installation)
-- [Claude Code Plugin](#claude-code-plugin)
-- [Quick Start](#quick-start)
-- [Interactive Mode](#interactive-mode)
-- [CLI Commands](#cli-commands)
-  - [start](#start)
-  - [stop](#stop)
-  - [status](#status)
-  - [requests](#requests)
-  - [request](#request)
-  - [clear](#clear)
-  - [trust-ca](#trust-ca)
-  - [uninstall-ca](#uninstall-ca)
-  - [proxy-on](#proxy-on-macos)
-  - [proxy-off](#proxy-off-macos)
-- [Web UI](#web-ui)
-- [HTTPS Interception](#https-interception)
-- [iOS Device Inspection](#ios-device-inspection)
-- [System Proxy](#system-proxy-macos)
-- [Configuration](#configuration)
-- [REST API](#rest-api)
-- [Architecture](#architecture)
-- [Development](#development)
 
 ---
 
-## Platform
-
-RoxyProxy is developed and tested on **macOS**. Core proxy and query functionality works on Linux, but the following features are macOS-only:
-
-- **System proxy** (`proxy-on` / `proxy-off`) -- uses `networksetup`
-- **Auto-enable system proxy** with `--tail` -- routes all macOS traffic through the proxy automatically
-- **CA trust** (`trust-ca`) -- uses macOS Keychain; Linux support exists but is less tested
-
-## Installation
-
-Run directly without installing:
+**Other proxy tools show traffic to humans.** RoxyProxy makes it queryable by Claude Code. Tell your AI "the Stripe webhook is failing, debug it" and it queries RoxyProxy, finds the 422 response, reads the error body, and fixes your code.
 
 ```bash
-npx @rvanbaalen/roxyproxy
+# Install and start capturing traffic in 10 seconds
+npx @rvanbaalen/roxyproxy requests --tail
 ```
 
-Or install globally:
+## Why RoxyProxy?
+
+- **AI-native.** A `--format agent` output mode returns enriched JSON optimized for LLM consumption. A Claude Code plugin teaches your AI assistant every command and API endpoint.
+- **One command.** `npx @rvanbaalen/roxyproxy` starts the proxy, enables system routing, and opens an interactive TUI. Ctrl+C to clean up.
+- **SQLite storage.** All traffic in a queryable database. Filter by host, status, method, time range. JSON output for piping.
+- **HTTPS interception.** Local CA, per-domain cert generation, one command to trust.
+- **Smart filters.** `--failed` for 4xx/5xx, `--last-hour`, `--last-day`, `--slow 500` for requests over 500ms.
+- **iOS inspection.** Point your device at the proxy, install the cert profile, full HTTPS visibility.
+- **REST API + SSE.** Every feature available via HTTP. Real-time streaming. Machine-readable by default.
+
+## Quick Start
 
 ```bash
-npm install -g @rvanbaalen/roxyproxy
-roxyproxy
+# Start proxy + TUI (auto-enables system proxy on macOS)
+roxyproxy requests --tail
+
+# Filter for a specific host
+roxyproxy requests --host api.example.com --tail
+
+# Show only failed requests from the last hour
+roxyproxy requests --failed --last-hour
+
+# AI-optimized output for Claude Code
+roxyproxy requests --host stripe.com --failed --format agent
 ```
 
-### From source
+### Manual setup
 
 ```bash
-git clone https://github.com/rvanbaalen/roxyproxy.git
-cd roxyproxy
-npm install
-npm run build
-npm link
+roxyproxy start                                              # Start proxy
+curl -x http://127.0.0.1:8080 http://httpbin.org/get        # Route traffic
+roxyproxy requests                                            # View captured traffic
+open http://127.0.0.1:8081                                   # Open web UI
+roxyproxy stop                                                # Stop
 ```
+
+For HTTPS: `roxyproxy trust-ca` then traffic flows through automatically.
 
 ## Claude Code Plugin
-
-RoxyProxy ships with a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin. Once installed, Claude knows all RoxyProxy commands, filters, API endpoints, and common debugging workflows.
-
-### Install
 
 ```
 /plugin marketplace add rvanbaalen/roxyproxy
 ```
 
-Then open the plugin browser and install roxyproxy:
+After installation, just tell Claude what you need. It knows every command, filter, and API endpoint.
 
-```
-/plugin
-```
-
-### What it provides
-
-After installation, Claude can help you:
-
-- Start/stop the proxy and configure HTTPS interception
-- Write `roxyproxy requests` queries with the right filter flags
-- Use the REST API to query captured traffic programmatically
-- Debug failing API calls by inspecting captured request/response pairs
-- Set up system-wide proxy routing on macOS
-
-Just ask Claude anything about intercepting or inspecting HTTP traffic and it will use its knowledge of RoxyProxy to help.
-
-## Quick Start
-
-The fastest way to start capturing traffic:
+## Installation
 
 ```bash
-# One command: starts proxy, enables system proxy, opens interactive TUI
-roxyproxy requests --tail
-
-# Filter for a specific host
-roxyproxy requests --host api.example.com --tail
+npx @rvanbaalen/roxyproxy          # Run without installing
+npm install -g @rvanbaalen/roxyproxy  # Or install globally
 ```
 
-This auto-starts the proxy, routes macOS system traffic through it, and opens a live terminal UI. Press Ctrl+C to quit -- the system proxy is automatically disabled.
+## Platform
 
-### Manual setup
-
-```bash
-# Start the proxy (default: proxy on :8080, web UI on :8081)
-roxyproxy start
-
-# Route traffic through it
-curl -x http://127.0.0.1:8080 http://httpbin.org/get
-
-# View captured traffic
-roxyproxy requests
-
-# Open the web UI
-open http://127.0.0.1:8081
-
-# Stop
-roxyproxy stop
-```
-
-For HTTPS interception, trust the CA certificate first:
-
-```bash
-roxyproxy start
-roxyproxy trust-ca
-curl -x http://127.0.0.1:8080 https://api.example.com/endpoint
-```
+Works on **macOS** and **Linux**. System proxy features (`proxy-on`/`proxy-off`) are macOS-only.
 
 ## Interactive Mode
 
@@ -255,17 +193,21 @@ roxyproxy requests [options]
 |---|---|---|
 | `--host <pattern>` | | Filter by hostname (substring match) |
 | `--status <code>` | | Filter by HTTP status code |
+| `--failed` | | Show only 4xx and 5xx responses |
 | `--method <method>` | | Filter by HTTP method |
 | `--search <pattern>` | | Search URLs (substring match) |
 | `--since <time>` | | After this time (Unix ms or ISO date) |
 | `--until <time>` | | Before this time (Unix ms or ISO date) |
+| `--last-hour` | | Requests from the last hour |
+| `--last-day` | | Requests from the last 24 hours |
+| `--slow <ms>` | | Requests slower than threshold (ms) |
 | `--limit <n>` | `100` | Maximum number of results |
-| `--format <format>` | `table` | Output format: `table` (default) or `json` |
+| `--format <format>` | `table` | Output format: `table`, `json`, or `agent` |
 | `--tail` | | Stream new requests in real-time (interactive TUI) |
 | `--ui-port <number>` | `8081` | UI/API port (used with `--tail`) |
 | `--db-path <path>` | `~/.roxyproxy/data.db` | Database location |
 
-The default output is a human-readable table. Use `--format json` for piping to `jq` or feeding to LLMs:
+The default output is a human-readable table. Use `--format json` for piping to `jq`, or `--format agent` for LLM-optimized output with decoded bodies and context:
 
 ```bash
 # All 500 errors
@@ -332,12 +274,12 @@ roxyproxy request <id> [options]
 
 | Option | Default | Description |
 |---|---|---|
-| `--format <format>` | `json` | Output format: `json` or `table` |
+| `--format <format>` | `json` | Output format: `json`, `table`, or `agent` |
 | `--db-path <path>` | `~/.roxyproxy/data.db` | Database location |
 
 ```bash
 roxyproxy request a1b2c3d4-e5f6-7890-abcd-ef1234567890
-roxyproxy request a1b2c3d4-e5f6-7890-abcd-ef1234567890 --format table
+roxyproxy request a1b2c3d4-e5f6-7890-abcd-ef1234567890 --format agent
 ```
 
 ### clear
