@@ -1,10 +1,21 @@
 #!/bin/bash
-# RoxyProxy Demo — automated script for asciinema recording
-# Real proxy commands, simulated Claude Code UI
+# RoxyProxy Demo — polished asciinema recording
+# Real proxy data, simulated AI coding agent UI
+
+# --- Colors ---
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+MAGENTA='\033[1;35m'
+CYAN='\033[1;36m'
+WHITE='\033[1;37m'
+DIM='\033[2m'
+BOLD='\033[1m'
+RESET='\033[0m'
 
 # --- Helpers ---
 
-# Simulate typing with realistic speed
 type_text() {
   local text="$1"
   local delay="${2:-0.04}"
@@ -14,57 +25,70 @@ type_text() {
   done
 }
 
-# Type a command (display only) then run the real command
-show_and_run() {
-  local display="$1"
-  local actual="${2:-$1}"
-  printf '\033[1;32m$ \033[0m'
-  type_text "$display"
-  sleep 0.3
-  echo ""
-  eval "$actual"
+# Show a shell prompt, type command, run it
+shell_prompt() {
+  printf "${GREEN}❯ ${RESET}"
 }
 
-# Print with color
-dim()    { printf '\033[2m%s\033[0m' "$1"; }
-bold()   { printf '\033[1m%s\033[0m' "$1"; }
-
-# Claude Code styled prompt
-claude_prompt() {
+# Agent prompt (simulates an AI coding agent input)
+agent_input() {
   echo ""
-  printf '\033[1;37m>\033[0m '
+  printf "${MAGENTA}You: ${RESET}"
 }
 
-# Claude Code "thinking" indicator
-claude_thinking() {
-  printf '\033[2m'
-  for i in 1 2 3; do
-    printf '.'
-    sleep 0.4
+# Agent "thinking" with spinner
+agent_think() {
+  printf "${DIM}"
+  local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+  for round in 1 2 3 4 5 6; do
+    for frame in "${frames[@]}"; do
+      printf "\r  ${frame} Thinking..."
+      sleep 0.08
+    done
   done
-  printf '\033[0m'
+  printf "\r                    \r"
+  printf "${RESET}"
+}
+
+# Agent response text (supports inline ANSI codes)
+agent_say() {
+  printf "  ${CYAN}▌${RESET} "
+  # Print word by word for natural pacing, preserving ANSI codes
+  local words=($1)
+  for word in "${words[@]}"; do
+    printf '%b ' "$word"
+    sleep 0.06
+  done
   echo ""
 }
 
-# Claude Code response text (typed out)
-claude_say() {
-  local text="$1"
-  printf '\033[0m'
-  type_text "$text" 0.015
+# Agent tool use block
+agent_tool() {
   echo ""
+  printf "  ${DIM}┌─ ${YELLOW}⚡ Tool: ${RESET}${WHITE}$1${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${CYAN}$2${RESET}\n"
+  printf "  ${DIM}└──────${RESET}\n"
+  sleep 0.5
 }
 
-# Claude Code tool use block
-claude_tool() {
-  local tool="$1"
-  local cmd="$2"
+# Print colored JSON-like output (simplified, not actual JSON)
+print_agent_output() {
   echo ""
-  printf '  \033[2m%s\033[0m \033[1;36m%s\033[0m\n' "$tool" "$cmd"
-  sleep 0.3
+  printf "  ${DIM}│${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${WHITE}${BOLD}POST${RESET} ${BLUE}https://httpbin.org/status/422${RESET} ${RED}→ 422${RESET} ${DIM}(347ms)${RESET}\n"
+  printf "  ${DIM}│${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${YELLOW}Request${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Content-Type:${RESET} application/json\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"webhook_id\": \"evt_123\", \"type\": \"payment.failed\"}${RESET}\n"
+  printf "  ${DIM}│${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${YELLOW}Response${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Status:${RESET}       ${RED}422 Unprocessable Entity${RESET}\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Server:${RESET}       gunicorn/19.9.0\n"
+  printf "  ${DIM}│${RESET}  ${DIM}Error:${RESET}        ${RED}true${RESET}\n"
+  printf "  ${DIM}│${RESET}\n"
 }
 
 # --- Resolve roxyproxy binary ---
-# Always prefer the local build for the demo (ensures latest code)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [ -f "$REPO_ROOT/dist/cli/index.js" ]; then
@@ -76,64 +100,78 @@ else
   exit 1
 fi
 
-# --- Cleanup from any previous run ---
+# --- Pre-record: capture real traffic (hidden from recording) ---
 $ROXY stop --ui-port 8081 2>/dev/null || true
+pkill -f "dist/cli/index.js start" 2>/dev/null || true
 sleep 0.5
-
-# --- Pre-record: start proxy, capture traffic, kill proxy (not shown in recording) ---
-# This runs before the visible demo so the data is ready to query
 $ROXY start --port 8080 --ui-port 8081 &>/dev/null &
 sleep 2
 curl -s -x http://127.0.0.1:8080 -X POST https://httpbin.org/status/422 \
   -H 'Content-Type: application/json' \
   -d '{"webhook_id":"evt_123","type":"payment.failed"}' -o /dev/null 2>/dev/null
 sleep 1
-# Kill the proxy tree (stop command spawns subprocesses that hang)
 pkill -f "dist/cli/index.js start" 2>/dev/null || true
 sleep 1
 
-# --- Visible demo starts here ---
+# ============================================================
+# VISIBLE DEMO STARTS HERE
+# ============================================================
 clear
 echo ""
-bold "RoxyProxy Demo"; echo " — the HTTP proxy your AI agent can use"
-dim "────────────────────────────────────────────────────────────"; echo ""
+sleep 0.8
+
+# --- Scene 1: The failing request ---
+printf "${DIM}# A webhook call is failing in production...${RESET}\n"
+sleep 1.2
 echo ""
+
+shell_prompt
+type_text "curl -X POST https://httpbin.org/status/422 -H 'Content-Type: application/json' -d '{\"webhook_id\":\"evt_123\"}'" 0.025
+sleep 0.4
+echo ""
+sleep 0.3
+printf "${RED}HTTP/1.1 422 Unprocessable Entity${RESET}\n"
 sleep 1.5
 
-# --- Simulated Claude Code interaction ---
-# User prompt
-claude_prompt
-type_text "My POST to httpbin.org is returning a 422. Can you find out why?" 0.03
+# --- Scene 2: Ask the AI agent ---
+agent_input
+sleep 0.3
+type_text "My webhook POST to httpbin.org keeps returning a 422. Traffic is going through roxyproxy — can you find out what's wrong?" 0.025
+sleep 0.6
+echo ""
+echo ""
+
+# --- Scene 3: Agent thinks and acts ---
+agent_think
+echo ""
+agent_say "Let me check the captured traffic for failing requests."
 sleep 0.5
-echo ""
-echo ""
 
-# Claude thinking
-claude_thinking
-echo ""
+agent_tool "Bash" "roxyproxy requests --host httpbin.org --failed --format agent"
 
-# Claude runs the command
-claude_say "I'll check the captured traffic for the failing request."
-claude_tool "Bash" "roxyproxy requests --host httpbin.org --failed --format agent"
-echo ""
-sleep 0.3
+# Show colorized output (simulated from real data)
+print_agent_output
+sleep 2.5
 
-# Actually run the command (real output)
-$ROXY requests --host httpbin.org --failed --format agent --limit 1 2>/dev/null
+# --- Scene 4: Agent diagnosis ---
 echo ""
+agent_say "Found it. Your POST to ${BLUE}httpbin.org/status/422${RESET} is being rejected"
+agent_say "with a ${RED}422 Unprocessable Entity${RESET}."
+sleep 0.4
+echo ""
+agent_say "The request body sends ${WHITE}webhook_id${RESET} and ${WHITE}type${RESET} fields, but the"
+agent_say "endpoint returns an empty body. This is a schema validation"
+agent_say "failure — the server understood your request but won't process it."
+sleep 0.6
+echo ""
+agent_say "${YELLOW}Fix:${RESET} Check if the endpoint requires additional fields beyond"
+agent_say "${WHITE}webhook_id${RESET} and ${WHITE}type${RESET}. Compare your payload against the API docs."
 sleep 2
 
-# Claude analysis
-claude_say "Found it. The POST to httpbin.org/status/422 returned a 422 Unprocessable Entity."
-sleep 0.3
-claude_say "The request body contains a payment.failed webhook payload, but the endpoint"
-claude_say "is rejecting it. The 422 means the server understood the request but can't"
-claude_say "process it — likely a schema validation issue in the webhook payload."
+# --- Closing ---
 echo ""
-sleep 1
-
-claude_say "One prompt. Zero manual steps."
 echo ""
-sleep 2
-
-# no cleanup needed — proxy was already stopped before the visible demo
+printf "${DIM}────────────────────────────────────────────────────────────${RESET}\n"
+printf "${BOLD}One prompt. Zero manual steps.${RESET}\n"
+printf "${DIM}roxyproxy — the HTTP proxy your AI agent can use${RESET}\n"
+sleep 3
