@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.7](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.6...roxyproxy-v0.1.7) (2026-03-27)
+
+
+### Features
+
+* add Repeater component with tabbed editor and response viewer ([ca8e5e0](https://github.com/rvanbaalen/roxyproxy/commit/ca8e5e01bafa28fc08c0df52b1b8db55813a9374))
+* **cli:** add agent output format for LLM-friendly request inspection ([f4af6a4](https://github.com/rvanbaalen/roxyproxy/commit/f4af6a4c5f73db5a960869c9c0b07884444da3a7))
+* **cli:** add buildFilter helper with --failed/--last-hour/--last-day/--slow aliases ([4edf399](https://github.com/rvanbaalen/roxyproxy/commit/4edf399e1f8264d3e81454cfb482c7f7f53e242a))
+* **db:** add statusMin/statusMax/durationMin filter support with duration index ([d2f423f](https://github.com/rvanbaalen/roxyproxy/commit/d2f423f0cc16cc40174e713ca5ae05b83908dcda))
+* detect and kill existing instances on start ([e6e56bd](https://github.com/rvanbaalen/roxyproxy/commit/e6e56bdf71e810001e19c12d11c70bae8676f5cb))
+* wire up Traffic/Repeater view switching in App ([04e888d](https://github.com/rvanbaalen/roxyproxy/commit/04e888d779e85a935a612538f0bba140280d2eeb))
+
 ## [0.1.6](https://github.com/rvanbaalen/roxyproxy/compare/roxyproxy-v0.1.5...roxyproxy-v0.1.6) (2026-03-18)
 
 
