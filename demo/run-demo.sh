@@ -37,7 +37,7 @@ agent_input() {
 agent_think() {
   printf "${DIM}"
   local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
-  for round in 1 2 3 4 5 6; do
+  for round in 1 2 3 4 5 6 7 8; do
     for frame in "${frames[@]}"; do
       printf "\r  ${frame} Thinking..."
       sleep 0.08
@@ -52,7 +52,7 @@ agent_say() {
   local words=($1)
   for word in "${words[@]}"; do
     printf '%b ' "$word"
-    sleep 0.06
+    sleep 0.07
   done
   echo ""
 }
@@ -62,21 +62,29 @@ agent_tool() {
   printf "  ${DIM}┌─ ${YELLOW}⚡ Tool: ${RESET}${WHITE}$1${RESET}\n"
   printf "  ${DIM}│${RESET}  ${CYAN}$2${RESET}\n"
   printf "  ${DIM}└──────${RESET}\n"
-  sleep 0.5
+  sleep 0.8
 }
 
 print_agent_output() {
   echo ""
   printf "  ${DIM}│${RESET}\n"
+  sleep 0.15
   printf "  ${DIM}│${RESET}  ${WHITE}${BOLD}POST${RESET} ${BLUE}https://api.example.com/webhooks${RESET} ${RED}→ 422${RESET} ${DIM}(218ms)${RESET}\n"
+  sleep 0.15
   printf "  ${DIM}│${RESET}\n"
   printf "  ${DIM}│${RESET}  ${YELLOW}Request${RESET}\n"
+  sleep 0.1
   printf "  ${DIM}│${RESET}  ${DIM}Content-Type:${RESET} application/json\n"
+  sleep 0.1
   printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"event\": \"invoice.paid\", \"amount\": 4999}${RESET}\n"
+  sleep 0.15
   printf "  ${DIM}│${RESET}\n"
   printf "  ${DIM}│${RESET}  ${YELLOW}Response${RESET}\n"
+  sleep 0.1
   printf "  ${DIM}│${RESET}  ${DIM}Status:${RESET}       ${RED}422 Unprocessable Entity${RESET}\n"
+  sleep 0.1
   printf "  ${DIM}│${RESET}  ${DIM}Body:${RESET}         ${WHITE}{\"error\": \"missing required field: idempotency_key\"}${RESET}\n"
+  sleep 0.1
   printf "  ${DIM}│${RESET}  ${DIM}Error:${RESET}        ${RED}true${RESET}\n"
   printf "  ${DIM}│${RESET}\n"
 }
@@ -86,16 +94,16 @@ print_agent_output() {
 # ============================================================
 clear
 echo ""
-sleep 0.5
+sleep 1
 
 shell_prompt
-type_text "roxyproxy start" 0.05
-sleep 0.4
+type_text "roxyproxy start" 0.06
+sleep 0.5
 echo ""
 echo ""
 
 # Emulated CLI banner
-sleep 0.3
+sleep 0.5
 printf "${CYAN}  ___                ___                    ${RESET}\n"
 sleep 0.05
 printf "${CYAN} | _ \\___ __ ___  _ | _ \\_ _ _____ ___  _  ${RESET}\n"
@@ -106,68 +114,72 @@ printf "${CYAN} |_|_\\___//_\\_\\\\\\_, ||_|  |_| \\___/_\\_\\ \\_, |${RESET}\n"
 sleep 0.05
 printf "${CYAN}                |__/                   |__/ ${RESET}\n"
 echo ""
-sleep 0.4
-
-printf "  ${GREEN}●${RESET} Proxy    ${CYAN}http://127.0.0.1:8080${RESET}\n"
-sleep 0.15
-printf "  ${GREEN}●${RESET} Web UI   ${CYAN}http://127.0.0.1:8081${RESET}\n"
-sleep 0.15
-printf "  ${GREEN}●${RESET} Network  ${CYAN}http://192.168.1.42:8081${RESET}\n"
-echo ""
 sleep 0.6
 
+printf "  ${GREEN}●${RESET} Proxy    ${CYAN}http://127.0.0.1:8080${RESET}\n"
+sleep 0.2
+printf "  ${GREEN}●${RESET} Web UI   ${CYAN}http://127.0.0.1:8081${RESET}\n"
+sleep 0.2
+printf "  ${GREEN}●${RESET} Network  ${CYAN}http://192.168.1.42:8081${RESET}\n"
+echo ""
+sleep 0.8
+
 printf "  ${GREEN}✔${RESET} CA certificate installed and trusted\n"
-sleep 0.5
+sleep 0.7
 printf "  ${GREEN}✔${RESET} System proxy enabled ${DIM}(all traffic routed through RoxyProxy)${RESET}\n"
-sleep 0.5
+sleep 0.7
 echo ""
 printf "  ${DIM}Capturing traffic... press Ctrl+C to stop${RESET}\n"
-sleep 2
+sleep 3
 
 # ============================================================
 # SCENE 2: Start the AI agent
 # ============================================================
 echo ""
+echo ""
 shell_prompt
-type_text "ai-agent" 0.05
-sleep 0.3
+type_text "ai-agent" 0.06
+sleep 0.4
 echo ""
 echo ""
 printf "  ${GREEN}●${RESET} AI coding agent connected ${DIM}(roxyproxy plugin loaded)${RESET}\n"
-sleep 1.5
+sleep 2.5
 
 # ============================================================
 # SCENE 3: AI agent debugging
 # ============================================================
 
 agent_input
-sleep 0.3
-type_text "Some of my webhook calls are failing. Can you check what's going wrong?" 0.03
-sleep 0.6
+sleep 0.5
+type_text "Some of my webhook calls are failing. Can you check what's going wrong?" 0.035
+sleep 1
 echo ""
 echo ""
 
 agent_think
 echo ""
 agent_say "Let me check the captured traffic for failing requests."
-sleep 0.5
+sleep 0.8
 
 agent_tool "Bash" "roxyproxy requests --failed --format agent"
 
 print_agent_output
-sleep 2.5
+sleep 3.5
 
+# ============================================================
+# SCENE 4: Agent diagnosis
+# ============================================================
 echo ""
 agent_say "Found it. Your POST to ${BLUE}api.example.com/webhooks${RESET} is returning"
 agent_say "a ${RED}422 Unprocessable Entity${RESET}."
-sleep 0.4
+sleep 0.8
 echo ""
 agent_say "The response body says: ${WHITE}\"missing required field: idempotency_key\"${RESET}."
 agent_say "Your payload sends ${WHITE}event${RESET} and ${WHITE}amount${RESET} but the API requires an"
 agent_say "${WHITE}idempotency_key${RESET} field for webhook delivery."
-sleep 0.6
+sleep 1
 echo ""
 agent_say "${YELLOW}Fix:${RESET} Add an ${WHITE}idempotency_key${RESET} to your webhook payload."
 
 # Hold the final frame
-sleep 5
+sleep 8
