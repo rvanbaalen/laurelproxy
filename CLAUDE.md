@@ -7,6 +7,10 @@ HTTP/HTTPS intercepting proxy with CLI, web UI, REST API, and Claude Code plugin
 - `main` branch: proxy source code, CLI, server, web UI, tests
 - `website` branch: Astro landing page + docs site, deployed to GitHub Pages at robinvanbaalen.nl/laurel-proxy/
 
+## Git Workflow
+
+Push directly to `main`. Releases are handled automatically by release-please.
+
 ## Development
 
 ```bash
