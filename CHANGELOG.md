@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/rvanbaalen/laurel-proxy/compare/laurel-proxy-v0.2.0...laurel-proxy-v0.2.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* repair broken isLaurelProxy identifier in port-utils ([b6259d4](https://github.com/rvanbaalen/laurel-proxy/commit/b6259d432cac568c0611c505fdfbe47505b76572))
+
 ## [0.2.0](https://github.com/rvanbaalen/laurel-proxy/compare/laurel-proxy-v0.1.7...laurel-proxy-v0.2.0) (2026-03-28)
 
 
