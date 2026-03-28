@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/rvanbaalen/laurelproxy/compare/laurel-proxy-v0.2.1...laurel-proxy-v0.2.2) (2026-03-28)
+
+
+### Features
+
+* disable system proxy on graceful shutdown ([d9f8413](https://github.com/rvanbaalen/laurelproxy/commit/d9f8413d8fd09c0cbd1382a1f2916578ec7f496c))
+
+
+### Bug Fixes
+
+* replace remaining RoxyProxy branding with Laurel Proxy ([2568143](https://github.com/rvanbaalen/laurelproxy/commit/25681434664fe753fe3d14f055883a399a99dc4f))
+
 ## [0.2.1](https://github.com/rvanbaalen/laurel-proxy/compare/laurel-proxy-v0.2.0...laurel-proxy-v0.2.1) (2026-03-28)
 
 
