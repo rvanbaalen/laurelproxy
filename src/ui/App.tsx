@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Controls } from './components/Controls.tsx';
 import { FilterBar } from './components/FilterBar.tsx';
 import { TrafficList } from './components/TrafficList.tsx';
@@ -6,11 +6,15 @@ import { RequestDetail } from './components/RequestDetail.tsx';
 import { ResizeHandle } from './components/ResizeHandle.tsx';
 import { Repeater, createTab } from './components/Repeater.tsx';
 import type { RepeaterTabData } from './components/Repeater.tsx';
-import { useSSE } from './api.ts';
+import { useSSE } from './client.ts';
+
+const FAVICON_RUNNING = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0a0a0a"/><circle cx="16" cy="16" r="4" fill="#22c55e"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle><circle cx="16" cy="16" r="7" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.2"><animate attributeName="r" values="7;10;7" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.2;0;0.2" dur="2s" repeatCount="indefinite"/></circle></svg>')}`;
+
+const FAVICON_STOPPED = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0a0a0a"/><circle cx="16" cy="16" r="4" fill="#f87171"/></svg>')}`;
 
 const MIN_PANEL_WIDTH = 300;
 const MAX_PANEL_WIDTH = 900;
-const DEFAULT_PANEL_WIDTH = 500;
+const DEFAULT_PANEL_WIDTH = 480;
 
 export function App() {
   const { requests: liveRequests, statusEvent, clearLocal } = useSSE(500);
@@ -18,28 +22,38 @@ export function App() {
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [activeView, setActiveView] = useState<'traffic' | 'repeater'>('traffic');
 
-  // Repeater state
   const [repeaterTabs, setRepeaterTabs] = useState<RepeaterTabData[]>([]);
   const [activeRepeaterTab, setActiveRepeaterTab] = useState<string | null>(null);
 
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterMethod, setFilterMethod] = useState('');
+  const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterMethods, setFilterMethods] = useState<Set<string>>(new Set());
   const [filterSearch, setFilterSearch] = useState('');
 
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   const filteredRequests = useMemo(() => {
-    const status = filterStatus;
-    const method = filterMethod;
     const search = filterSearch.toLowerCase();
 
-    if (!status && !method && !search) return liveRequests;
+    if (filterStatuses.size === 0 && filterMethods.size === 0 && !search) return liveRequests;
 
     return liveRequests.filter((r) => {
-      if (status && String(r.status) !== status) return false;
-      if (method && r.method !== method) return false;
+      if (filterStatuses.size > 0) {
+        const matchesAny = Array.from(filterStatuses).some(status => {
+          if (status === '2xx') return r.status != null && r.status >= 200 && r.status < 300;
+          if (status === '4xx') return r.status != null && r.status >= 400 && r.status < 500;
+          if (status === '5xx') return r.status != null && r.status >= 500 && r.status < 600;
+          return String(r.status) === status;
+        });
+        if (!matchesAny) return false;
+      }
+      if (filterMethods.size > 0 && !filterMethods.has(r.method)) return false;
       if (search && !r.url.toLowerCase().includes(search)) return false;
       return true;
     });
-  }, [liveRequests, filterStatus, filterMethod, filterSearch]);
+  }, [liveRequests, filterStatuses, filterMethods, filterSearch]);
+
+  const errorCount = useMemo(() => liveRequests.filter(r => r.status != null && r.status >= 400).length, [liveRequests]);
 
   const handleClear = useCallback(() => { setSelectedId(null); clearLocal(); }, [clearLocal]);
 
@@ -51,9 +65,25 @@ export function App() {
     setPanelWidth(prev => Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, prev + delta)));
   }, []);
 
+  const toggleStatus = useCallback((s: string) => {
+    setFilterStatuses(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s); else next.add(s);
+      return next;
+    });
+  }, []);
+
+  const toggleMethod = useCallback((m: string) => {
+    setFilterMethods(prev => {
+      const next = new Set(prev);
+      if (next.has(m)) next.delete(m); else next.add(m);
+      return next;
+    });
+  }, []);
+
   const clearFilters = useCallback(() => {
-    setFilterStatus('');
-    setFilterMethod('');
+    setFilterStatuses(new Set());
+    setFilterMethods(new Set());
     setFilterSearch('');
   }, []);
 
@@ -64,44 +94,64 @@ export function App() {
     setActiveView('repeater');
   }, []);
 
+  // Dynamic favicon based on proxy status
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (link) link.href = statusEvent?.running ? FAVICON_RUNNING : FAVICON_STOPPED;
+  }, [statusEvent?.running]);
+
+  // Cmd+K to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   return (
-    <div className="flex flex-col h-screen">
-      <Controls onClear={handleClear} statusEvent={statusEvent} />
-      {/* View tabs */}
-      <div className="flex border-b border-gray-800 bg-gray-900">
-        <button
-          onClick={() => setActiveView('traffic')}
-          className={`px-4 py-2 text-sm font-medium ${activeView === 'traffic' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-        >Traffic</button>
-        <button
-          onClick={() => setActiveView('repeater')}
-          className={`px-4 py-2 text-sm font-medium ${activeView === 'repeater' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-        >
-          Repeater{repeaterTabs.length > 0 && ` (${repeaterTabs.length})`}
-        </button>
-      </div>
+    <div className="flex flex-col h-screen font-sans">
+      <Controls
+        onClear={handleClear}
+        statusEvent={statusEvent}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        repeaterCount={repeaterTabs.length}
+        filterSearch={filterSearch}
+        onSearchChange={setFilterSearch}
+        searchRef={searchRef}
+      />
 
       {activeView === 'traffic' && (
         <>
           <FilterBar
-            status={filterStatus} method={filterMethod} search={filterSearch}
-            onStatusChange={setFilterStatus}
-            onMethodChange={setFilterMethod} onSearchChange={setFilterSearch}
+            statuses={filterStatuses}
+            methods={filterMethods}
+            onToggleStatus={toggleStatus}
+            onToggleMethod={toggleMethod}
             onClearFilters={clearFilters}
-            matchCount={filteredRequests.length} totalCount={liveRequests.length}
+            matchCount={filteredRequests.length}
+            totalCount={liveRequests.length}
+            errorCount={errorCount}
           />
           <div className="flex flex-1 overflow-hidden">
             <div className="flex flex-col flex-1 min-w-0">
               <TrafficList requests={filteredRequests} selectedId={selectedId} onSelect={handleSelect} />
             </div>
-            {selectedId && (
-              <>
-                <ResizeHandle onResize={handleResize} />
-                <div className="flex-shrink-0 overflow-hidden" style={{ width: panelWidth }}>
-                  <RequestDetail requestId={selectedId} onClose={() => setSelectedId(null)} onSendToRepeater={handleSendToRepeater} />
-                </div>
-              </>
-            )}
+            <ResizeHandle onResize={handleResize} visible={!!selectedId} onDragStart={() => setIsDragging(true)} onDragEnd={() => setIsDragging(false)} />
+            <div
+              className="detail-panel flex-shrink-0"
+              data-open={!!selectedId}
+              data-dragging={isDragging}
+              style={{ width: selectedId ? panelWidth : 0 }}
+            >
+              {selectedId && (
+                <RequestDetail requestId={selectedId} onClose={() => setSelectedId(null)} onSendToRepeater={handleSendToRepeater} />
+              )}
+            </div>
           </div>
         </>
       )}

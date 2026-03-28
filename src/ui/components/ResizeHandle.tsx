@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 
 interface ResizeHandleProps {
   onResize: (delta: number) => void;
+  visible?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
-export function ResizeHandle({ onResize }: ResizeHandleProps) {
+export function ResizeHandle({ onResize, visible = true, onDragStart, onDragEnd }: ResizeHandleProps) {
   const dragging = useRef(false);
   const lastX = useRef(0);
 
@@ -14,7 +17,8 @@ export function ResizeHandle({ onResize }: ResizeHandleProps) {
     lastX.current = e.clientX;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-  }, []);
+    onDragStart?.();
+  }, [onDragStart]);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -29,6 +33,7 @@ export function ResizeHandle({ onResize }: ResizeHandleProps) {
         dragging.current = false;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        onDragEnd?.();
       }
     };
 
@@ -38,12 +43,14 @@ export function ResizeHandle({ onResize }: ResizeHandleProps) {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [onResize]);
+  }, [onResize, onDragEnd]);
 
   return (
     <div
       onMouseDown={onMouseDown}
-      className="w-1 cursor-col-resize bg-gray-800 hover:bg-blue-500 active:bg-blue-400 flex-shrink-0 transition-colors"
+      className={`cursor-col-resize bg-border-subtle hover:bg-accent/40 active:bg-accent/60 flex-shrink-0 transition-all duration-200 ease-smooth ${
+        visible ? 'w-1 opacity-100' : 'w-0 opacity-0 pointer-events-none'
+      }`}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchRequest } from '../api.ts';
-import type { RequestRecord } from '../api.ts';
+import { fetchRequest } from '../client.ts';
+import type { RequestRecord } from '../client.ts';
 
 const SKIP_HEADERS = new Set([
   'proxy-connection', 'proxy-authorization', 'connection',
@@ -28,6 +28,25 @@ function shellQuote(s: string): string {
   return "'" + s.replace(/'/g, "'\\''") + "'";
 }
 
+const statusColor = (status: number | null) => {
+  if (!status) return 'text-text-muted';
+  if (status < 300) return 'text-accent';
+  if (status < 400) return 'text-blue-400';
+  if (status < 500) return 'text-orange-400';
+  return 'text-red-400';
+};
+
+const methodColor = (method: string) => {
+  const colors: Record<string, string> = {
+    GET: 'text-blue-400',
+    POST: 'text-accent',
+    PUT: 'text-yellow-400',
+    PATCH: 'text-orange-400',
+    DELETE: 'text-red-400',
+  };
+  return colors[method] || 'text-text-muted';
+};
+
 interface RequestDetailProps {
   requestId: string;
   onClose: () => void;
@@ -37,10 +56,9 @@ interface RequestDetailProps {
 export function RequestDetail({ requestId, onClose, onSendToRepeater }: RequestDetailProps) {
   const [record, setRecord] = useState<RequestRecord | null>(null);
   const [activeTab, setActiveTab] = useState<'request' | 'response'>('response');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => { fetchRequest(requestId).then(setRecord); }, [requestId]);
-
-  const [copied, setCopied] = useState(false);
 
   const copyCurl = useCallback(() => {
     if (!record) return;
@@ -71,42 +89,63 @@ export function RequestDetail({ requestId, onClose, onSendToRepeater }: RequestD
     });
   }, [record, onSendToRepeater]);
 
-  if (!record) return <div className="p-4 text-gray-500">Loading...</div>;
+  if (!record) return <div className="p-4 text-text-muted text-sm">Loading...</div>;
 
   const requestHeaders = parseHeaders(record.request_headers);
   const responseHeaders = parseHeaders(record.response_headers);
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 md:border-l border-gray-800">
-      <div className="flex items-center justify-between p-3 border-b border-gray-800">
-        <div className="flex items-center gap-2 text-sm min-w-0">
-          <span className="font-mono font-bold text-blue-400">{record.method}</span>
-          <span className="font-mono text-green-400">{record.status}</span>
-          <span className="text-gray-400 truncate">{record.url}</span>
+    <div className="flex flex-col h-full bg-bg-primary md:border-l border-border-subtle">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border-subtle">
+        <div className="flex items-center gap-2 text-xs font-mono min-w-0">
+          <span className={`font-semibold ${methodColor(record.method)}`}>{record.method}</span>
+          <span className={`${statusColor(record.status)}`}>{record.status}</span>
+          <span className="text-text-secondary truncate">{record.url}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {onSendToRepeater && (
-            <button onClick={sendToRepeater} className="text-xs px-2 py-1 rounded bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Send to Repeater">
+            <button onClick={sendToRepeater} className="px-2 py-0.5 text-[11px] rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
               Repeater
             </button>
           )}
-          <button onClick={copyCurl} className="text-xs px-2 py-1 rounded bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors" title="Copy as cURL">
+          <button onClick={copyCurl} className="px-2 py-0.5 text-[11px] rounded-md border border-border bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors">
             {copied ? 'Copied!' : 'cURL'}
           </button>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-lg px-2">&times;</button>
+          <button onClick={onClose} className="text-text-muted hover:text-text-secondary text-lg px-1.5 transition-colors">&times;</button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2 text-xs text-gray-500 border-b border-gray-800">
-        <span>Duration: {record.duration}ms</span>
-        <span>Size: {record.response_size}B</span>
-        <span>Protocol: {record.protocol}</span>
+
+      {/* Meta */}
+      <div className="flex gap-4 px-4 py-1.5 text-[11px] text-text-muted border-b border-border-subtle font-mono">
+        <span>{record.duration}ms</span>
+        <span>{record.response_size}B</span>
+        <span>{record.protocol}</span>
         <span>{new Date(record.timestamp).toLocaleTimeString()}</span>
       </div>
-      <div className="flex border-b border-gray-800">
-        <button onClick={() => setActiveTab('request')} className={`px-4 py-2 text-sm ${activeTab === 'request' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500'}`}>Request</button>
-        <button onClick={() => setActiveTab('response')} className={`px-4 py-2 text-sm ${activeTab === 'response' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500'}`}>Response</button>
+
+      {/* Tabs */}
+      <div className="flex border-b border-border-subtle">
+        <button
+          onClick={() => setActiveTab('request')}
+          className={`px-4 py-2 text-xs transition-all duration-200 ease-bounce ${
+            activeTab === 'request'
+              ? 'text-text-primary border-b-2 border-accent'
+              : 'text-text-muted hover:text-text-secondary border-b-2 border-transparent'
+          }`}
+        >Request</button>
+        <button
+          onClick={() => setActiveTab('response')}
+          className={`px-4 py-2 text-xs transition-all duration-200 ease-bounce ${
+            activeTab === 'response'
+              ? 'text-text-primary border-b-2 border-accent'
+              : 'text-text-muted hover:text-text-secondary border-b-2 border-transparent'
+          }`}
+        >Response</button>
       </div>
-      <div className="flex-1 overflow-auto p-3">
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4">
         {activeTab === 'request' ? (
           <><HeadersView headers={requestHeaders} /><BodyView body={record.request_body} contentType={null} /></>
         ) : (
@@ -119,11 +158,15 @@ export function RequestDetail({ requestId, onClose, onSendToRepeater }: RequestD
 
 function HeadersView({ headers }: { headers: Record<string, string> }) {
   return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Headers</h3>
-      <div className="font-mono text-xs space-y-0.5">
+    <div className="mb-5">
+      <h3 className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-2">Headers</h3>
+      <div className="font-mono text-[11px] leading-[1.8]">
         {Object.entries(headers).map(([key, value]) => (
-          <div key={key}><span className="text-purple-400">{key}</span><span className="text-gray-600">: </span><span className="text-gray-300">{value}</span></div>
+          <div key={key}>
+            <span className="text-accent">{key}</span>
+            <span className="text-text-muted">: </span>
+            <span className="text-text-secondary">{value}</span>
+          </div>
         ))}
       </div>
     </div>
@@ -142,8 +185,8 @@ function BodyView({ body, contentType }: { body: string | null; contentType: str
   }
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Body</h3>
-      <pre className="font-mono text-xs text-gray-300 bg-gray-950 rounded p-3 overflow-auto whitespace-pre-wrap">{formatted}</pre>
+      <h3 className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-2">Body</h3>
+      <pre className="font-mono text-[11px] text-text-secondary bg-bg-secondary rounded-md p-3 overflow-auto whitespace-pre-wrap border border-border-subtle">{formatted}</pre>
     </div>
   );
 }

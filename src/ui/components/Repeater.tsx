@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { replayRequest } from '../api.ts';
-import type { ReplayResponse } from '../api.ts';
+import { replayRequest } from '../client.ts';
+import type { ReplayResponse } from '../client.ts';
 
 export interface OriginalResponseData {
   status: number | null;
@@ -127,9 +127,9 @@ export function Repeater({ tabs, activeTabId, onTabsChange, onActiveTabChange }:
 
   if (tabs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <p className="mb-4">No repeater tabs open</p>
-        <button onClick={addTab} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+      <div className="flex flex-col items-center justify-center h-full text-text-muted">
+        <p className="mb-4 text-sm">No repeater tabs open</p>
+        <button onClick={addTab} className="px-4 py-2 rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 text-sm transition-all duration-200 ease-bounce">
           New Request
         </button>
       </div>
@@ -139,35 +139,37 @@ export function Repeater({ tabs, activeTabId, onTabsChange, onActiveTabChange }:
   return (
     <div className="flex flex-col h-full">
       {/* Tab bar */}
-      <div className="flex items-center border-b border-gray-800 bg-gray-900 overflow-x-auto">
+      <div className="flex items-center border-b border-border-subtle bg-bg-primary overflow-x-auto">
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`flex items-center gap-1 px-3 py-2 text-sm cursor-pointer border-r border-gray-800 shrink-0 ${
-              tab.id === activeTabId ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'
+            className={`flex items-center gap-1 px-3 py-2 text-xs cursor-pointer border-r border-border-subtle shrink-0 transition-all duration-200 ease-bounce ${
+              tab.id === activeTabId
+                ? 'bg-bg-secondary text-text-primary border-b-2 border-b-accent'
+                : 'text-text-muted hover:text-text-secondary'
             }`}
             onClick={() => onActiveTabChange(tab.id)}
           >
             <span className="truncate max-w-32">{tab.name}</span>
             <button
               onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
-              className="text-gray-600 hover:text-gray-300 ml-1"
+              className="text-text-muted hover:text-text-secondary ml-1 transition-all duration-200 ease-bounce"
             >&times;</button>
           </div>
         ))}
-        <button onClick={addTab} className="px-3 py-2 text-gray-500 hover:text-gray-300 text-sm shrink-0">+</button>
+        <button onClick={addTab} className="px-3 py-2 text-text-muted hover:text-text-secondary text-xs shrink-0 transition-all duration-200 ease-bounce">+</button>
       </div>
 
       {/* Split pane */}
       {activeTab && (
         <div className="flex flex-1 overflow-hidden">
           {/* Request editor */}
-          <div className="flex flex-col w-1/2 border-r border-gray-800 overflow-auto">
-            <div className="flex gap-2 p-3 border-b border-gray-800">
+          <div className="flex flex-col w-1/2 border-r border-border-subtle overflow-auto">
+            <div className="flex gap-2 p-3 border-b border-border-subtle">
               <select
                 value={activeTab.request.method}
                 onChange={(e) => updateRequest(activeTab.id, 'method', e.target.value)}
-                className="bg-gray-800 text-white px-2 py-1.5 rounded text-sm border border-gray-700"
+                className="bg-bg-secondary text-text-primary px-2 py-1.5 rounded-md text-xs border border-border font-mono"
               >
                 {METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -176,33 +178,33 @@ export function Repeater({ tabs, activeTabId, onTabsChange, onActiveTabChange }:
                 value={activeTab.request.url}
                 onChange={(e) => updateRequest(activeTab.id, 'url', e.target.value)}
                 placeholder="https://example.com/api/endpoint"
-                className="flex-1 bg-gray-800 text-white px-3 py-1.5 rounded text-sm border border-gray-700 font-mono"
+                className="flex-1 bg-bg-secondary text-text-primary px-3 py-1.5 rounded-md text-xs border border-border font-mono min-w-0"
               />
               <button
                 onClick={sendRequest}
                 disabled={activeTab.loading || !activeTab.request.url}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-sm font-medium shrink-0"
+                className="px-4 py-1.5 rounded-md border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 disabled:border-border disabled:bg-bg-secondary disabled:text-text-muted text-xs font-medium shrink-0 transition-all duration-200 ease-bounce"
               >
                 {activeTab.loading ? 'Sending...' : 'Send'}
               </button>
             </div>
             <div className="flex flex-col flex-1 p-3 gap-3">
               <div className="flex flex-col flex-1 min-h-0">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">Headers</label>
+                <label className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-1">Headers</label>
                 <textarea
                   value={activeTab.request.headers}
                   onChange={(e) => updateRequest(activeTab.id, 'headers', e.target.value)}
                   placeholder={"Content-Type: application/json\nAuthorization: Bearer token"}
-                  className="flex-1 bg-gray-950 text-gray-300 font-mono text-xs p-3 rounded border border-gray-800 resize-none"
+                  className="flex-1 bg-bg-primary text-text-secondary font-mono text-[11px] p-3 rounded-md border border-border-subtle resize-none focus:border-accent/40 focus:outline-none transition-all duration-200 ease-bounce"
                 />
               </div>
               <div className="flex flex-col flex-1 min-h-0">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">Body</label>
+                <label className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-1">Body</label>
                 <textarea
                   value={activeTab.request.body}
                   onChange={(e) => updateRequest(activeTab.id, 'body', e.target.value)}
                   placeholder='{"key": "value"}'
-                  className="flex-1 bg-gray-950 text-gray-300 font-mono text-xs p-3 rounded border border-gray-800 resize-none"
+                  className="flex-1 bg-bg-primary text-text-secondary font-mono text-[11px] p-3 rounded-md border border-border-subtle resize-none focus:border-accent/40 focus:outline-none transition-all duration-200 ease-bounce"
                 />
               </div>
             </div>
@@ -211,12 +213,12 @@ export function Repeater({ tabs, activeTabId, onTabsChange, onActiveTabChange }:
           {/* Response viewer */}
           <div className="flex flex-col w-1/2 overflow-auto">
             {activeTab.loading && (
-              <div className="flex items-center justify-center h-full text-gray-500">
+              <div className="flex items-center justify-center h-full text-text-muted text-sm">
                 Sending request...
               </div>
             )}
             {activeTab.error && !activeTab.loading && (
-              <div className="flex items-center justify-center h-full text-red-400 p-4 text-center">
+              <div className="flex items-center justify-center h-full text-red-400 p-4 text-center text-sm">
                 {activeTab.error}
               </div>
             )}
@@ -224,7 +226,7 @@ export function Repeater({ tabs, activeTabId, onTabsChange, onActiveTabChange }:
               <ResponseView response={activeTab.response} originalResponse={activeTab.originalResponse} />
             )}
             {!activeTab.response && !activeTab.loading && !activeTab.error && (
-              <div className="flex items-center justify-center h-full text-gray-600">
+              <div className="flex items-center justify-center h-full text-text-muted text-sm">
                 Send a request to see the response
               </div>
             )}
@@ -245,26 +247,30 @@ function classifyDiffResult(origStatus: number | null, replayStatus: number): st
 }
 
 const diffResultStyles: Record<string, { label: string; color: string }> = {
-  improved: { label: 'IMPROVED', color: 'text-green-400' },
+  improved: { label: 'IMPROVED', color: 'text-accent' },
   regressed: { label: 'REGRESSED', color: 'text-red-400' },
   changed: { label: 'CHANGED', color: 'text-yellow-400' },
-  unchanged: { label: 'UNCHANGED', color: 'text-gray-500' },
+  unchanged: { label: 'UNCHANGED', color: 'text-text-muted' },
+};
+
+const statusColorFn = (status: number) => {
+  if (status < 300) return 'text-accent';
+  if (status < 400) return 'text-blue-400';
+  if (status < 500) return 'text-orange-400';
+  return 'text-red-400';
 };
 
 function ResponseView({ response, originalResponse }: { response: ReplayResponse; originalResponse: OriginalResponseData | null }) {
-  const statusColor = response.status < 300 ? 'text-green-400' :
-    response.status < 400 ? 'text-yellow-400' :
-    response.status < 500 ? 'text-orange-400' : 'text-red-400';
-
+  const sColor = statusColorFn(response.status);
   const diffResult = originalResponse ? classifyDiffResult(originalResponse.status, response.status) : null;
   const diffStyle = diffResult ? diffResultStyles[diffResult] : null;
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex gap-4 px-3 py-2 text-xs text-gray-500 border-b border-gray-800">
-        <span className={`font-mono font-bold ${statusColor}`}>{response.status}</span>
-        <span>Duration: {response.duration}ms</span>
-        <span>Size: {response.size}B</span>
+      <div className="flex gap-4 px-3 py-2 text-[11px] text-text-muted border-b border-border-subtle font-mono">
+        <span className={`font-bold ${sColor}`}>{response.status}</span>
+        <span>{response.duration}ms</span>
+        <span>{response.size}B</span>
         {diffStyle && (
           <span className={`font-bold ${diffStyle.color}`}>{diffStyle.label}</span>
         )}
@@ -272,33 +278,33 @@ function ResponseView({ response, originalResponse }: { response: ReplayResponse
 
       {/* Diff section */}
       {originalResponse && (
-        <div className="px-3 py-2 border-b border-gray-800 bg-gray-950">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Diff vs. Original</h3>
-          <div className="font-mono text-xs space-y-1">
+        <div className="px-3 py-2 border-b border-border-subtle bg-bg-secondary">
+          <h3 className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-2">Diff vs. Original</h3>
+          <div className="font-mono text-[11px] space-y-1">
             <div>
-              <span className="text-gray-500">status: </span>
+              <span className="text-text-muted">status: </span>
               {originalResponse.status !== response.status ? (
                 <>
                   <span className="text-red-400">{originalResponse.status ?? '?'}</span>
-                  <span className="text-gray-600"> → </span>
-                  <span className={statusColor}>{response.status}</span>
+                  <span className="text-text-muted"> → </span>
+                  <span className={sColor}>{response.status}</span>
                   <span className="text-yellow-400 ml-2">[CHANGED]</span>
                 </>
               ) : (
                 <>
-                  <span className={statusColor}>{response.status}</span>
-                  <span className="text-gray-600 ml-2">[unchanged]</span>
+                  <span className={sColor}>{response.status}</span>
+                  <span className="text-text-muted ml-2">[unchanged]</span>
                 </>
               )}
             </div>
             <div>
-              <span className="text-gray-500">body: </span>
+              <span className="text-text-muted">body: </span>
               {(() => {
                 const origBody = originalResponse.body ? formatResponseBody(originalResponse.body) : '';
                 const replayBody = formatResponseBody(response.body);
                 return origBody !== replayBody
                   ? <span className="text-yellow-400">[CHANGED]</span>
-                  : <span className="text-gray-600">[unchanged]</span>;
+                  : <span className="text-text-muted">[unchanged]</span>;
               })()}
             </div>
           </div>
@@ -306,24 +312,24 @@ function ResponseView({ response, originalResponse }: { response: ReplayResponse
       )}
 
       <div className="flex-1 overflow-auto p-3">
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Headers</h3>
-          <div className="font-mono text-xs space-y-0.5">
+        <div className="mb-5">
+          <h3 className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-2">Headers</h3>
+          <div className="font-mono text-[11px] leading-[1.8]">
             {Object.entries(response.headers).map(([key, value]) => {
               const vals = Array.isArray(value) ? value : [value];
               return vals.map((v, i) => (
                 <div key={`${key}-${i}`}>
-                  <span className="text-purple-400">{key}</span>
-                  <span className="text-gray-600">: </span>
-                  <span className="text-gray-300">{v}</span>
+                  <span className="text-accent">{key}</span>
+                  <span className="text-text-muted">: </span>
+                  <span className="text-text-secondary">{v}</span>
                 </div>
               ));
             })}
           </div>
         </div>
         <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Body</h3>
-          <pre className="font-mono text-xs text-gray-300 bg-gray-950 rounded p-3 overflow-auto whitespace-pre-wrap">
+          <h3 className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.05em] mb-2">Body</h3>
+          <pre className="font-mono text-[11px] text-text-secondary bg-bg-primary rounded-md p-3 overflow-auto whitespace-pre-wrap border border-border-subtle">
             {formatResponseBody(response.body)}
           </pre>
         </div>

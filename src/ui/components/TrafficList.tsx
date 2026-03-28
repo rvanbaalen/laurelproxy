@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { CaretUp, CaretDown, CaretUpDown } from '@phosphor-icons/react';
-import type { RequestRecord } from '../api.ts';
+import type { RequestRecord } from '../client.ts';
 
 interface TrafficListProps {
   requests: RequestRecord[];
@@ -12,29 +12,34 @@ type SortKey = 'timestamp' | 'method' | 'status' | 'host' | 'path' | 'duration' 
 type SortDir = 'asc' | 'desc';
 
 const COLUMNS: { key: SortKey; label: string; minPx: number; align?: 'right'; hideClass?: string }[] = [
-  { key: 'timestamp', label: 'Time', minPx: 110 },
-  { key: 'method', label: 'Method', minPx: 90 },
-  { key: 'status', label: 'Status', minPx: 80 },
-  { key: 'host', label: 'Host', minPx: 90, hideClass: 'hidden md:table-cell' },
+  { key: 'timestamp', label: 'Time', minPx: 100 },
+  { key: 'method', label: 'Method', minPx: 64 },
+  { key: 'status', label: 'Status', minPx: 52 },
   { key: 'path', label: 'Path', minPx: 120 },
-  { key: 'duration', label: 'Duration', minPx: 100, align: 'right', hideClass: 'hidden lg:table-cell' },
-  { key: 'response_size', label: 'Size', minPx: 70, align: 'right', hideClass: 'hidden lg:table-cell' },
+  { key: 'host', label: 'Host', minPx: 80, hideClass: 'hidden md:table-cell' },
+  { key: 'duration', label: 'ms', minPx: 60, align: 'right', hideClass: 'hidden lg:table-cell' },
+  { key: 'response_size', label: 'Size', minPx: 60, align: 'right', hideClass: 'hidden lg:table-cell' },
 ];
 
-// Initial width fractions (sum to 1)
-const INITIAL_WIDTHS = [0.13, 0.07, 0.06, 0.19, 0.37, 0.10, 0.08];
+const INITIAL_WIDTHS = [0.12, 0.07, 0.06, 0.37, 0.20, 0.09, 0.09];
 
 const statusColor = (status: number | null) => {
-  if (!status) return 'text-gray-500';
-  if (status < 300) return 'text-green-400';
-  if (status < 400) return 'text-yellow-400';
+  if (!status) return 'text-text-muted';
+  if (status < 300) return 'text-accent';
+  if (status < 400) return 'text-blue-400';
   if (status < 500) return 'text-orange-400';
   return 'text-red-400';
 };
 
 const methodColor = (method: string) => {
-  const colors: Record<string, string> = { GET: 'text-blue-400', POST: 'text-green-400', PUT: 'text-yellow-400', PATCH: 'text-orange-400', DELETE: 'text-red-400' };
-  return colors[method] || 'text-gray-400';
+  const colors: Record<string, string> = {
+    GET: 'text-blue-400',
+    POST: 'text-accent',
+    PUT: 'text-yellow-400',
+    PATCH: 'text-orange-400',
+    DELETE: 'text-red-400',
+  };
+  return colors[method] || 'text-text-muted';
 };
 
 const formatBytes = (bytes: number) => {
@@ -63,27 +68,27 @@ function compare(a: RequestRecord, b: RequestRecord, key: SortKey): number {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-  if (!active) return <CaretUpDown size={14} className="shrink-0 text-gray-700" />;
+  if (!active) return <CaretUpDown size={12} className="shrink-0 text-text-muted/40" />;
   const Icon = dir === 'asc' ? CaretUp : CaretDown;
-  return <Icon size={14} weight="bold" className="shrink-0 text-blue-400" />;
+  return <Icon size={12} weight="bold" className="shrink-0 text-accent" />;
 }
 
 const renderCell = (req: RequestRecord, key: SortKey) => {
   switch (key) {
     case 'timestamp':
-      return <span className="font-mono text-gray-500 tabular-nums">{formatTimestamp(req.timestamp)}</span>;
+      return <span className="font-mono text-text-muted text-[11px] tabular-nums">{formatTimestamp(req.timestamp)}</span>;
     case 'method':
-      return <span className={`font-mono ${methodColor(req.method)}`}>{req.method}</span>;
+      return <span className={`font-mono text-[11px] font-semibold ${methodColor(req.method)}`}>{req.method}</span>;
     case 'status':
-      return <span className={`font-mono ${statusColor(req.status)}`}>{req.status ?? '-'}</span>;
+      return <span className={`font-mono text-[11px] ${statusColor(req.status)}`}>{req.status ?? '-'}</span>;
     case 'host':
-      return <span className="text-gray-300">{req.host}</span>;
+      return <span className="text-text-muted text-[11px]">{req.host}</span>;
     case 'path':
-      return <span className="text-gray-400">{req.path}</span>;
+      return <span className="text-text-secondary text-xs">{req.path}</span>;
     case 'duration':
-      return <span className="text-gray-500">{req.duration ? `${req.duration}ms` : '-'}</span>;
+      return <span className="text-text-muted text-[11px]">{req.duration ? `${req.duration}` : '-'}</span>;
     case 'response_size':
-      return <span className="text-gray-500">{formatBytes(req.response_size)}</span>;
+      return <span className="text-text-muted text-[11px]">{formatBytes(req.response_size)}</span>;
   }
 };
 
@@ -153,12 +158,12 @@ export function TrafficList({ requests, selectedId, onSelect }: TrafficListProps
             <col key={i} style={{ width: `${(w * 100).toFixed(2)}%`, minWidth: COLUMNS[i].minPx }} />
           ))}
         </colgroup>
-        <thead className="bg-gray-900 sticky top-0">
-          <tr className="text-left text-gray-400 border-b border-gray-800">
+        <thead className="bg-bg-primary sticky top-0 z-10">
+          <tr className="text-left border-b border-border-subtle">
             {COLUMNS.map((col, i) => (
               <th
                 key={col.key}
-                className={`px-3 py-2 relative cursor-pointer select-none hover:text-gray-200 transition-colors ${col.align === 'right' ? 'text-right' : ''} ${col.hideClass || ''}`}
+                className={`px-4 py-1.5 relative cursor-pointer select-none text-[10px] font-semibold uppercase tracking-[0.05em] text-text-muted hover:text-text-secondary transition-colors ${col.align === 'right' ? 'text-right' : ''} ${col.hideClass || ''}`}
                 onClick={() => handleSort(col.key)}
               >
                 <span className="inline-flex items-center gap-1">
@@ -170,7 +175,7 @@ export function TrafficList({ requests, selectedId, onSelect }: TrafficListProps
                     className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 group hidden md:block"
                     onMouseDown={(e) => handleResizeStart(e, i)}
                   >
-                    <div className="mx-auto w-px h-full group-hover:bg-blue-400/60" />
+                    <div className="mx-auto w-px h-full group-hover:bg-accent/40" />
                   </div>
                 )}
               </th>
@@ -182,12 +187,16 @@ export function TrafficList({ requests, selectedId, onSelect }: TrafficListProps
             <tr
               key={req.id}
               onClick={() => onSelect(req.id)}
-              className={`border-b border-gray-800/50 cursor-pointer hover:bg-gray-800/50 ${selectedId === req.id ? 'bg-gray-800' : ''}`}
+              className={`border-b border-border-subtle/50 cursor-pointer transition-all duration-100 ease-smooth ${
+                selectedId === req.id
+                  ? 'bg-bg-secondary border-l-2 border-l-accent'
+                  : 'border-l-2 border-l-transparent hover:bg-bg-secondary/50'
+              }`}
             >
               {COLUMNS.map((col) => (
                 <td
                   key={col.key}
-                  className={`px-3 py-1.5 truncate ${col.align === 'right' ? 'text-right' : ''} ${col.hideClass || ''}`}
+                  className={`px-4 py-[7px] truncate font-mono ${col.align === 'right' ? 'text-right' : ''} ${col.hideClass || ''}`}
                 >
                   {renderCell(req, col.key)}
                 </td>
@@ -196,8 +205,9 @@ export function TrafficList({ requests, selectedId, onSelect }: TrafficListProps
           ))}
           {requests.length === 0 && (
             <tr>
-              <td colSpan={COLUMNS.length} className="px-3 py-8 text-center text-gray-600">
-                No requests captured yet. Configure your app to use the proxy.
+              <td colSpan={COLUMNS.length} className="px-4 py-16 text-center">
+                <div className="text-text-muted text-sm">No requests captured yet</div>
+                <div className="text-text-muted/60 text-xs mt-1">Configure your app to use the proxy</div>
               </td>
             </tr>
           )}
