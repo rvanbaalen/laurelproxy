@@ -206,8 +206,8 @@ export function TrafficList({ requests, selectedId, onSelect }: TrafficListProps
           {requests.length === 0 && (
             <tr>
               <td colSpan={COLUMNS.length} className="px-4 py-16 text-center">
-                <div className="text-text-muted text-sm">No requests captured yet</div>
-                <div className="text-text-muted/60 text-xs mt-1">Configure your app to use the proxy</div>
+                <div className="text-text-muted text-sm">See every HTTP request. Debug anything.</div>
+                <div className="text-text-muted/60 text-xs mt-1">Capture, inspect, and replay HTTP/HTTPS traffic.</div>
               </td>
             </tr>
           )}

@@ -2,11 +2,11 @@
   <img src="assets/logo.png" alt="RoxyProxy" width="600" />
 </p>
 
-<h3 align="center">The HTTP proxy your AI agent can use</h3>
+<h3 align="center">See every HTTP request. Debug anything.</h3>
 
 <p align="center">
-  Intercept HTTP/HTTPS traffic. Store it in SQLite. Query it from CLI, API, or your AI coding assistant.<br>
-  <strong>One prompt to debug any API.</strong>
+  Capture, inspect, and replay HTTP/HTTPS traffic. Debug web APIs, reverse-engineer mobile apps, or let your AI agent query everything.<br>
+  <strong>Free and open source.</strong>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 
 ---
 
-**Other proxy tools show traffic to humans.** RoxyProxy makes it queryable by Claude Code. Tell your AI "the Stripe webhook is failing, debug it" and it queries RoxyProxy, finds the 422 response, reads the error body, and fixes your code.
+**Other proxy tools show traffic to humans.** RoxyProxy makes it queryable by AI agents. Tell Claude "the Stripe webhook is failing, debug it" and it queries RoxyProxy, finds the 422 response, reads the error body, and fixes your code.
 
 <p align="center">
   <img src="demo/roxyproxy-demo.gif" alt="RoxyProxy demo — one prompt to debug any API" width="720" />
